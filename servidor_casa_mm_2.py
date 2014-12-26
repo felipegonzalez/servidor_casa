@@ -67,7 +67,7 @@ globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip'
 
 movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
 niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000}
-temperaturas = {'sala':0, 'tv':0,  'estudiof':0}
+temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0}
 
 
 ## registro de movimiento
@@ -195,9 +195,9 @@ def monitorCasa():
                     if(sensor_i=='temperature'):
                         if(temperaturas[lugar_i] > 0):
                             #promediar temps porque algunas cajas tienen 2 sensores
-                            temperaturas[lugar_i] = (item[6] + temperaturas[lugar_i])/2 
+                            temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
                         else:
-                            temperaturas[lugar_i] = item[6]
+                            temperaturas[lugar_i] = float(item[6])
                 if(lugar_i=='puerta'):
                     if(sensor_i =='dio-1'):
                         movimiento[lugar_i] = valor_i
@@ -248,10 +248,10 @@ def monitorCasa():
                 globales['alarma_enviada'] = True
      
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(temperaturas['tv'] >= 22 and (not globales['ac_encendido'])):
+        if(temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = True
-        if(temperaturas['tv'] < 21 and globales['ac_encendido']):
+        if(temperaturas['tv'] < 22 and globales['ac_encendido']):
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = False
 
