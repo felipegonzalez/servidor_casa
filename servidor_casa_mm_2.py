@@ -30,7 +30,8 @@ myxbees = {
     '0013a20040c4190d':'tv',
     '0013a20040bef84d':'puerta',
     '0013a20040bf06d4':'estudiof',
-    '0013a20040bf962c':'vestidor'
+    '0013a20040bf962c':'vestidor',
+    '0013a20040bf06bd':'recamara'
     }
 
 
