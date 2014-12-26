@@ -62,7 +62,8 @@ delay_luces = 2*60
 delay_registro = 60
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
-globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False}
+globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
+    'ac_encendido':False}
 
 movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
 niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000}
@@ -192,7 +193,11 @@ def monitorCasa():
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
                     if(sensor_i=='temperature'):
-                        temperaturas[lugar_i] = item[6]
+                        if(temperaturas[lugar_i] > 0):
+                            #promediar temps porque algunas cajas tienen 2 sensores
+                            temperaturas[lugar_i] = (item[6] + temperaturas[lugar_i])/2 
+                        else:
+                            temperaturas[lugar_i] = item[6]
                 if(lugar_i=='puerta'):
                     if(sensor_i =='dio-1'):
                         movimiento[lugar_i] = valor_i
@@ -242,6 +247,14 @@ def monitorCasa():
                 print "error envio"
                 globales['alarma_enviada'] = True
      
+        # activar aire si temperatura en tv es alta y hay alguien presente
+        if(temperaturas['tv'] >= 22 and (not globales['ac_encendido'])):
+            xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+            globales['ac_encendido'] = True
+        if(temperaturas['tv'] < 21 and globales['ac_encendido']):
+            xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+            globales['ac_encendido'] = False
+
         # datos debug     
         if((time.time()-log_time) > 5):
             print '---------------------'
@@ -267,6 +280,7 @@ def monitorCasa():
                 if(comando[0]=='aire_acondicionado'):
                     print "Aire acondicionado"
                     xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+                    globales['ac_encendido'] = not globales['ac_encendido']
                 if(comando[0]=='apagar_luces'):
                     apagarTodas(luces)
                     print "Apagando luces"
