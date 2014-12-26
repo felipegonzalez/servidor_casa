@@ -248,7 +248,7 @@ def monitorCasa():
                 globales['alarma_enviada'] = True
      
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(activo and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
+        if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = True
         if(temperaturas['tv'] < 22 and globales['ac_encendido']):
