@@ -188,6 +188,8 @@ def monitorCasa():
                                 tiempo_sonos=time.time()+60
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
+                    if(sensor_i=='temperature'):
+                        temperatura[lugar_i] = item[6]
                 if(lugar_i=='puerta'):
                     if(sensor_i =='dio-1'):
                         movimiento[lugar_i] = valor_i
@@ -244,6 +246,7 @@ def monitorCasa():
             time_loop = time.time()
             log_time = time.time()
             print "Luz, ", niveles_luz
+            print "Temperatura, ", temperaturas
             print "Movimiento, "
             str_mov = ''
             for key in movimiento:
