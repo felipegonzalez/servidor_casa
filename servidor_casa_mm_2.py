@@ -30,12 +30,13 @@ myxbees = {
     '0013a20040c4190d':'tv',
     '0013a20040bef84d':'puerta',
     '0013a20040bf06d4':'estudiof',
-    '0013a20040bf962c':'vestidor'
+    '0013a20040bf962c':'vestidor',
+    '0013a20040bf06bd':'recamara'
     }
 
 
 #mapeo de xbee pins )para cajas sin arduino)
-xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta'},
+xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo'},
         'escalera':{'dio-4':'pir'}}
 
 ip_hue ="http://192.168.100.2/api/newdeveloper/"
@@ -51,14 +52,16 @@ texto_1 = "Iniciando sistema"
 sonos = SoCo(ip_sonos)
 
 
+# que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900}
 estado_luces = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
 
-delay_luces_l = {'tv':4*60, 'sala':3*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60}
+delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60}
 delay_luces = 2*60
 delay_registro = 60
 
+# atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False}
 
 movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}

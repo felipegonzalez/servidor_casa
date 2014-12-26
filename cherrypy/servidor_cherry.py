@@ -143,7 +143,7 @@ if __name__ == '__main__':
          },
          '/dist/css/bootstrap.min.css': {
 		'tools.staticfile.on' : True,
-		'tools.staticfile.filename' : "/Users/felipe/casa_servidor/cherrypy/dist/css/bootstrap.min.css"
+		'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/css/bootstrap.min.css"
      }
 }
     webapp = control()
