@@ -192,7 +192,7 @@ def monitorCasa():
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
                     if(sensor_i=='temperature'):
-                        temperatura[lugar_i] = item[6]
+                        temperaturas[lugar_i] = item[6]
                 if(lugar_i=='puerta'):
                     if(sensor_i =='dio-1'):
                         movimiento[lugar_i] = valor_i
