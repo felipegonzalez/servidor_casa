@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+   <head>
+   <h3> </h3>
+     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+     <link href="/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">   
+  <script type="text/javascript">
+       $(document).ready(function() {
+
+         $("#accion-garage").click(function(e) {
+           $.post("/garage", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+          $("#accion-alarma").click(function(e) {
+           $.post("/alarma", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+     $("#accion-alarma2").click(function(e) {
+           $.post("/alarma_des", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+      $("#aire").click(function(e) {
+           $.post("/control_aire", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+      $("#apagar-luces").click(function(e) {
+           $.post("/apagar_luces", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+       });
+     </script>
+   </head>
+   <body>
+<div class="span7 text-center">
+<p>
+     <button id="accion-garage" class="btn btn-primary btn-lg">Garage</button>     
+</p>   
+ <p>
+     <button id="accion-alarma" class="btn btn-danger btn-lg">Activar Alarma</button>     
+</p>   
+  <p>
+     <button id="accion-alarma2" class="btn btn-primary btn-lg">Desactivar alarma</button>     
+</p>   
+   <p>
+     <button id="aire" class="btn btn-primary btn-lg">Control AC</button>     
+</p>   
+    <p>
+     <button id="apagar-luces" class="btn btn-primary btn-lg">Apagar luces</button>     
+</p>   
+<div id="respuesta">
+         <input type="text" />
+      </div>
+     </div>
+   </body>
+</html>
+
