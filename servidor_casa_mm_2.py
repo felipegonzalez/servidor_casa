@@ -24,6 +24,8 @@ import MySQLdb
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
+lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina']
+
 myxbees = {
     '0013a20040bf05de':'escalera', 
     '0013a20040bf0582':'sala',
@@ -55,25 +57,29 @@ sonos = SoCo(ip_sonos)
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[9,10]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':700}
-estado_luces = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False,'cocina':False}
-
 delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
     'cocina':2*60}
-delay_luces = 2*60
+
+# inicializar
+estado_luces = {}
+movimiento = {}
+niveles_luz = {}
+tiempo_movimiento = {}
+
+for lugar in lugares:
+    estado_luces[lugar] = False
+    movimiento[lugar] = False
+    niveles_luz[lugar] = 1000
+    tiempo_movimiento[lugar] = 0
+
+temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
+
 delay_registro = 60
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'felipe':True}
 
-movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,
-'vestidor':False,'cocina':False}
-niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000,'cocina':1000}
-temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
-
-
-## registro de movimiento
-tiempo_movimiento = {'tv':0, 'sala':0, 'puerta':0,'escalera':0, 'estudiof':0,'vestidor':0,'cocina':0}
 
 
 SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
@@ -115,15 +121,19 @@ def monitorCasa():
     tiempo_sonos = time.time()
     time_loop = time.time() 
     log_time = time.time()
-    tiempos_registro = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0,'cocina':0}
-    mom_registrar = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0,'cocina':0}
+
+    tiempos_registro = {}
+    mom_registrar = {}
+    for lugar in lugares:
+        tiempos_registro[lugar] = 0
+        mom_registrar[lugar] = 0
+    
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
     for key in mom_registrar:
         mom_registrar[key] = time.time()
     
-    ##en inicio todos los movimientos son falsos
-    movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False,'cocina':False}
+
 
     # xbees iniciar conección
     try:
@@ -149,9 +159,11 @@ def monitorCasa():
                     apagarGrupo(luces[key])
                     estado_luces[key] = False
 
-        movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,
-        'estudiof':False,'vestidor':False,'cocina':False}
-        # leer xbee
+        ##en inicio todos los movimientos son falsos
+        for lugar in lugares:
+            movimiento[lugar] = False
+
+        ## leer xbee
         response = xbee.wait_read_frame(timeout=0.15)
         #print(response)
         if('source_addr_long' in response.keys()):
@@ -404,6 +416,23 @@ def procesar_samples(response, st):
     for elem in lecturas:
         for key in elem:
             salida = [st, source, lugar,key,'pinout','1',elem[key]]
+            ocurrencias.append(salida)
+    return ocurrencias
+
+def procesar_samples_unif(response, st):
+    ocurrencias = []
+    source = response['source_addr_long'].encode('hex')
+    lugar = myxbees[source]
+    lecturas = response['samples']
+
+    #xbee_pin[lugar][key], tipo binary, 1
+    #convertir 
+    for elem in lecturas:
+        for key in elem:
+            tipo = 'binary'
+            if (key[0:3] == 'adc'):
+                tipo = 'analog'
+            salida = [st, source, lugar,(xbee_pin[lugar])[key],tipo,'1',elem[key]]
             ocurrencias.append(salida)
     return ocurrencias
 
