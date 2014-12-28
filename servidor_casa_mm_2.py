@@ -61,10 +61,10 @@ delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':
     'cocina':2*60}
 
 # inicializar
-estado_luces = {}
-movimiento = {}
-niveles_luz = {}
-tiempo_movimiento = {}
+estado_luces={}
+movimiento={}
+niveles_luz={}
+tiempo_movimiento={}
 
 for lugar in lugares:
     estado_luces[lugar] = False
