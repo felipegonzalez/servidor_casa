@@ -53,11 +53,12 @@ sonos = SoCo(ip_sonos)
 
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900}
-estado_luces = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[9,10]}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':700}
+estado_luces = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False,'cocina':False}
 
-delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60}
+delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
+    'cocina':2*60}
 delay_luces = 2*60
 delay_registro = 60
 
@@ -65,13 +66,14 @@ delay_registro = 60
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'felipe':True}
 
-movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
-niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000}
-temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0}
+movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,
+'vestidor':False,'cocina':False}
+niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000,'cocina':1000}
+temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
 
 
 ## registro de movimiento
-tiempo_movimiento = {'tv':0, 'sala':0, 'puerta':0,'escalera':0, 'estudiof':0,'vestidor':0}
+tiempo_movimiento = {'tv':0, 'sala':0, 'puerta':0,'escalera':0, 'estudiof':0,'vestidor':0,'cocina':0}
 
 
 SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
@@ -113,15 +115,15 @@ def monitorCasa():
     tiempo_sonos = time.time()
     time_loop = time.time() 
     log_time = time.time()
-    tiempos_registro = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0}
-    mom_registrar = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0}
+    tiempos_registro = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0,'cocina':0}
+    mom_registrar = {'escalera':0, 'sala':0, 'tv':0, 'puerta':0,'estudiof':0,'vestidor':0,'cocina':0}
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
     for key in mom_registrar:
         mom_registrar[key] = time.time()
     
     ##en inicio todos los movimientos son falsos
-    movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
+    movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False,'cocina':False}
 
     # xbees iniciar conección
     try:
@@ -147,7 +149,8 @@ def monitorCasa():
                     apagarGrupo(luces[key])
                     estado_luces[key] = False
 
-        movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
+        movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,
+        'estudiof':False,'vestidor':False,'cocina':False}
         # leer xbee
         response = xbee.wait_read_frame(timeout=0.15)
         #print(response)
