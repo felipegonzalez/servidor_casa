@@ -31,7 +31,7 @@ myxbees = {
     '0013a20040bef84d':'puerta',
     '0013a20040bf06d4':'estudiof',
     '0013a20040bf962c':'vestidor',
-    '0013a20040bf06bd':'recamara'
+    '0013a20040bf06bd':'cocina'
     }
 
 
@@ -63,7 +63,7 @@ delay_registro = 60
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False}
+    'ac_encendido':False, 'felipe':True}
 
 movimiento = {'escalera':False,'sala':False, 'tv':False, 'puerta':False,'estudiof':False,'vestidor':False}
 niveles_luz ={'escalera':1000,'sala':1000, 'tv':1000, 'puerta':1000,'estudiof':1000,'vestidor':1000}
