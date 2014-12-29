@@ -55,7 +55,7 @@ sonos = SoCo(ip_sonos)
 
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[9,10]}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':700}
 delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
     'cocina':2*60}
@@ -165,7 +165,8 @@ def monitorCasa():
 
         ## leer xbee
         response = xbee.wait_read_frame(timeout=0.15)
-        #print(response)
+        #if(len(response)>0):
+        #    print(response)
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
@@ -336,7 +337,7 @@ def monitorCasa():
            # registrar sensores
 
         try:
-            if(time.time()-mom_registrar[lugar] > 5):
+            if(time.time()-mom_registrar[lugar] > 2):
                 mom_registrar[lugar] = time.time()
                 for item in ocurrencia:
                     #print(item)
