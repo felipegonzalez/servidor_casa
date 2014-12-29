@@ -143,13 +143,14 @@ def monitorCasa():
     except:
         print "Error serial/xbee"
 
-
+    tstamp = time.time()
 
 
     #################### ciclo de monitoreo #########################
 
     while True:
         #tstamp del ciclo
+        #print tstamp - time.time()
         tstamp = time.time()
 
          # apagar si no se ha detectado movimiento en un rato
@@ -244,15 +245,7 @@ def monitorCasa():
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = False
 
-        # datos estados en consola    
-        if((time.time()-log_time) > 5):
-            print '---------------------'
-            print 'tiempo loop', time.time()- time_loop
-            time_loop = time.time()
-            log_time = time.time()
-            print "Luz, ", niveles_luz
-            print "Temperatura, ", temperaturas
-            print "Movimiento, ", movimiento
+      
            
         # procesar comandos pendientes
         with concom:
@@ -324,7 +317,19 @@ def monitorCasa():
                 except:
                     print "Error escribir base completa"
      
+        # datos estados en consola    
+        if((time.time()-log_time) > 5):
+            print '---------------------'
+            print 'tiempo loop', time.time()- tstamp
+            time_loop = time.time()
+            log_time = time.time()
+            print "Luz, ", niveles_luz
+            print "Temperatura, ", temperaturas
+            print "Movimiento, ", movimiento
 
+
+
+            
 ##############################################################################
 def escribir_ocurrencia(ocurrencia, conlocal):
     with conlocal:
