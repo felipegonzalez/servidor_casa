@@ -215,7 +215,7 @@ def monitorCasa():
                             temperaturas[lugar_i] = float(item[6])
   
 
-
+        ######### luces ########
         # encender luces donde haya movimiento, si están apagadas?
         for key in movimiento:
             if(movimiento[key]):
@@ -225,6 +225,7 @@ def monitorCasa():
                         encenderGrupo(luces[key])
                         estado_luces[key] = True
 
+        ########## alarmas #########
         ## alertar por mensaje si alarma
         if(globales['alarma_trip'] and not(globales['alarma_enviada'])):
             encenderGrupo(luces['puerta'])
@@ -235,6 +236,7 @@ def monitorCasa():
                 print "error envio"
                 globales['alarma_enviada'] = True
      
+        ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
         if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
@@ -243,7 +245,7 @@ def monitorCasa():
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = False
 
-        # datos debug     
+        # datos estados en consola    
         if((time.time()-log_time) > 5):
             print '---------------------'
             print 'tiempo loop', time.time()- time_loop
@@ -251,12 +253,8 @@ def monitorCasa():
             log_time = time.time()
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
-            print "Movimiento, "
-            str_mov = ''
-            for key in movimiento:
-                str_mov = str_mov +' '+ key +' '+ str(movimiento[key])
-            print str_mov
-
+            print "Movimiento, ", movimiento
+           
         # procesar comandos pendientes
         with concom:
             c = concom.cursor()
@@ -306,8 +304,7 @@ def monitorCasa():
                         print "Error activo escribir"
             c.execute('DELETE FROM pendientes')
             
-           # registrar sensores
-
+        ### registrar sensores
         try:
             if(time.time()-mom_registrar[lugar] > 2):
                 mom_registrar[lugar] = time.time()
@@ -319,8 +316,7 @@ def monitorCasa():
             print("error registro 1")
 
 
-         # si el lugar le toca registro, actualizar base de datos
-        #try:
+        ## si el lugar le toca registro, actualizar base de datos
         if 'lugar' in locals():
             if((time.time() - tiempos_registro[lugar]) > 5):
                 tiempos_registro[lugar] = time.time()
@@ -328,13 +324,7 @@ def monitorCasa():
                     escribir_ocurrencia(ocurrencia, conlocal)
                 except:
                     print "Error escribir conlocal"
-                #for item in ocurrencia:
-                #   lugar_x = item[2]
-                #   if(len(item)>6):
-                #       escribir(item,conrds)
-                #   tiempos_registro[lugar_x] = time.time()
-        #except:
-        #    print "Error registro" 
+     
 
 ##############################################################################
 def escribir_ocurrencia(ocurrencia, conlocal):
@@ -379,18 +369,6 @@ def procesar_rf(response, st):
             ocurrencias.append(lecs)
     return ocurrencias
         
-def procesar_samples(response, st):
-    ocurrencias = []
-    source = response['source_addr_long'].encode('hex')
-    lugar = myxbees[source]
-    lecturas = response['samples']
-    #xbee_pin[lugar][key], tipo binary, 1
-    #convertir 
-    for elem in lecturas:
-        for key in elem:
-            salida = [st, source, lugar,key,'pinout','1',elem[key]]
-            ocurrencias.append(salida)
-    return ocurrencias
 
 def procesar_samples_unif(response, st):
     ocurrencias = []
