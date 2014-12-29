@@ -174,12 +174,10 @@ def monitorCasa():
             if('rf_data' in response.keys()):
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
             if('samples' in response.keys()):
-                ocurrencia = procesar_samples(response, st) # datos de xbee sin arduino
-                print ocurrencia
-                print procesar_samples_unif(response, st)
-           # if('samples' in response.keys()):
-           #     ocurrencia = procesar_sample(response, st) # datos de xbee sin arduino
-            #print(ocurrencia)    
+                ocurrencia = procesar_samples_unif(response, st) # datos de xbee sin arduino
+                #print ocurrencia
+                #print procesar_samples_unif(response, st)
+           
             
 #########################################################################
             # niveles de luz y movimiento, puertas
@@ -194,57 +192,28 @@ def monitorCasa():
                             niveles_luz[lugar_i] = float(valor_i)
                         except:
                             print "Error float luz"
-                    if(sensor_i == 'adc-3' and lugar_i=='puerta'):
-                        niveles_luz[lugar_i] = float(valor_i)
-                        item[3] = 'photo'
-                    #actalizar lecturas de movimiento
+                    # actualizar movimiento
                     if(sensor_i == 'pir'):
                         mov = movimiento[lugar_i]
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
-                        if(tstamp-tiempo_sonos>15):
+                        if(tstamp-tiempo_sonos > 15):
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
                                 tocar("doorbell.mp3")
                             else:
-                                tiempo_sonos=time.time()+60
+                                tiempo_sonos=time.time() + 120
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
+                    ## temperaturas
                     if(sensor_i=='temperature'):
                         if(temperaturas[lugar_i] > 0):
                             #promediar temps porque algunas cajas tienen 2 sensores
                             temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
                         else:
                             temperaturas[lugar_i] = float(item[6])
-                if(lugar_i=='puerta'):
-                    if(sensor_i =='dio-1'):
-                        movimiento[lugar_i] = valor_i
-                        item[3] = 'pir'
-                    if(sensor_i == 'dio-2'):
-                        item[3] = 'puerta'
-                        if(not valor_i):
-                            if(tstamp - tiempo_sonos>15):
-                                tiempo_sonos=time.time()
-                                if(not globales['alarma']):
-                                    tocar("doorbell.mp3")
-                                else:
-                                    tiempo_sonos=time.time()+120
-                                    globales['alarma_trip'] = True
-                                    tocar("conversa.mp3")
-                        
-                        #item[6] = int(item[6])
-                if(sensor_i =='dio-4' and (lugar_i=='escalera' and len(item)>6)):
-                    movimiento[lugar_i] = valor_i 
-                    item[3] = 'pir'
-                    if(globales['activo']):
-                        if(item[6]):
-                            encenderGrupo(luces['escalera'])
-                            estado_luces['escalera'] = True
-                        else:
-                            apagarGrupo(luces['escalera'])
-                            estado_luces['escalera'] = False
-
+  
 
 
         # encender luces donde haya movimiento, si están apagadas?
