@@ -227,7 +227,7 @@ def monitorCasa():
                                     tocar("doorbell.mp3")
                                 else:
                                     tiempo_sonos=time.time()+120
-                                    alarma_trip = True
+                                    globales['alarma_trip'] = True
                                     tocar("conversa.mp3")
                         
                         #item[6] = int(item[6])
