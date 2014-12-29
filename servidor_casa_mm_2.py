@@ -175,7 +175,10 @@ def monitorCasa():
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
             if('samples' in response.keys()):
                 ocurrencia = procesar_samples(response, st) # datos de xbee sin arduino
-            
+                print ocurrencia
+                print procesar_samples_unif(response, st)
+           # if('samples' in response.keys()):
+           #     ocurrencia = procesar_sample(response, st) # datos de xbee sin arduino
             #print(ocurrencia)    
             
 #########################################################################
@@ -430,10 +433,17 @@ def procesar_samples_unif(response, st):
     #convertir 
     for elem in lecturas:
         for key in elem:
-            tipo = 'binary'
             if (key[0:3] == 'adc'):
                 tipo = 'analog'
-            salida = [st, source, lugar,(xbee_pin[lugar])[key],tipo,'1',elem[key]]
+                temp_val = elem[key]
+            else:
+                tipo = 'binary'
+                if(elem[key]==True):
+                    temp_val ='1'
+                else:
+                    temp_val='0'
+
+            salida = [st, source, lugar,(xbee_pin[lugar])[key],tipo,'1',temp_val]
             ocurrencias.append(salida)
     return ocurrencias
 
