@@ -280,7 +280,7 @@ def monitorCasa():
                     if(comando[1]=='0'):
                         globales['alarma'] = False
                         tocar("alarma_desactivada.mp3")
-                        globales['alarma_trip ']= False
+                        globales['alarma_trip']= False
                         globales['alarma_enviada'] = False
                         globales['activo'] = True
                 if(comando[0]=='mantener_luces'):
