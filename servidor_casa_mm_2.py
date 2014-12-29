@@ -90,7 +90,7 @@ SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
 con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
 concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
 conlocal = lite.connect('/Volumes/mmshared/bdatos/temp_monitor.db')
-
+conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 
 
 def monitorCasa():
@@ -163,7 +163,7 @@ def monitorCasa():
         for lugar in lugares:
             movimiento[lugar] = False
 
-        ## leer xbee
+        ## leer xbee y procesar ############################
         response = xbee.wait_read_frame(timeout=0.15)
         #if(len(response)>0):
         #    print(response)
@@ -179,7 +179,6 @@ def monitorCasa():
                 #print procesar_samples_unif(response, st)
            
             
-#########################################################################
             # niveles de luz y movimiento, puertas
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
@@ -313,7 +312,7 @@ def monitorCasa():
                     if(len(item)>6):
                         update_ultimas(item, con2, str(st))
         except:
-            print("error registro 1")
+            print("error registro ultimas")
 
 
         ## si el lugar le toca registro, actualizar base de datos
@@ -321,9 +320,9 @@ def monitorCasa():
             if((time.time() - tiempos_registro[lugar]) > 5):
                 tiempos_registro[lugar] = time.time()
                 try:
-                    escribir_ocurrencia(ocurrencia, conlocal)
+                    escribir_ocurrencia_mysql(ocurrencia, conrds)
                 except:
-                    print "Error escribir conlocal"
+                    print "Error escribir base completa"
      
 
 ##############################################################################
@@ -342,17 +341,15 @@ def escribir_ocurrencia(ocurrencia, conlocal):
                conlocal.execute(commandx)
         
 
-def escribir(item,conrds):
-    with conlocal:   
-       curds = conlocal.cursor()
-       comand_base = 'insert into mediciones (tiempo_reg, xbee, lugar, tipo, unidad, num_sensor, valor) VALUES '
-       comand_2 ="('"+item[0]+"','"+item[1]+"','"+item[2]+"','"+item[3]+"','"+item[4]+"','"+item[5]+"',"+str(float(item[6]))+")"
-       commandx = comand_base+comand_2
-       #print "."
-       #print commandx
-       curds.execute(commandx)
-  # except:
-  #     print "xxEscribir sqlite registro largo"
+def escribir_ocurrencia_mysql(ocurrencia, conrds):
+    with conrds:
+        for item in ocurrencia:
+            if(len(item) > 6):
+                cur = conrds.cursor()
+                comand_base = 'insert into mediciones (tiempo_reg, xbee, lugar, tipo, unidad, num_sensor, valor) VALUES '
+                comand_2 ="('"+item[0]+"','"+item[1]+"','"+item[2]+"','"+item[3]+"','"+item[4]+"','"+str(int(item[5]))+"',"+str(float(item[6]))+")"
+                commandx = comand_base+comand_2
+                cur.execute(commandx)
 
 
 def procesar_rf(response, st):
