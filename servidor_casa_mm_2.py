@@ -80,7 +80,6 @@ for lugar in lugares:
 
 temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
 
-delay_registro = 60
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
