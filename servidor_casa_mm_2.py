@@ -54,11 +54,15 @@ texto_1 = "Iniciando sistema"
 sonos = SoCo(ip_sonos)
 
 
+
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500}
 delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
     'cocina':2*60}
+
+# los que tienen cero envían datos según pausas
+delay_registro = {'escalera':1, 'sala':1, 'tv':1, 'estudiof':1, 'puerta':10, 'vestidor':1, 'cocina':1}
 
 # inicializar
 estado_luces={}
@@ -71,6 +75,8 @@ for lugar in lugares:
     movimiento[lugar] = False
     niveles_luz[lugar] = 1000
     tiempo_movimiento[lugar] = 0
+
+
 
 temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
 
@@ -310,19 +316,18 @@ def monitorCasa():
             
         ### registrar sensores
         try:
-            if(time.time()-mom_registrar[lugar] > 2):
+            if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
                 mom_registrar[lugar] = time.time()
                 for item in ocurrencia:
                     #print(item)
-                    if(len(item)>6):
-                        update_ultimas(item, con2, str(st))
+                    update_ultimas(item, con2, str(st))
         except:
             print("error registro ultimas")
 
 
         ## si el lugar le toca registro, actualizar base de datos
         if 'lugar' in locals():
-            if((time.time() - tiempos_registro[lugar]) > 5):
+            if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
                 tiempos_registro[lugar] = time.time()
                 try:
                     escribir_ocurrencia_mysql(ocurrencia, conrds)
