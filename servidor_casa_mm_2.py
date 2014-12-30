@@ -56,7 +56,7 @@ sonos = SoCo(ip_sonos)
 
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':700}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500}
 delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
     'cocina':2*60}
 
@@ -78,7 +78,7 @@ delay_registro = 60
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False, 'felipe':True}
+    'ac_encendido':False, 'felipe':True, 'alarma_gas':False, 'alarma_gas_enviada':False}
 
 
 
@@ -213,6 +213,11 @@ def monitorCasa():
                             temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
                         else:
                             temperaturas[lugar_i] = float(item[6])
+                    ## checar gas
+                    if(sensor_i =='gaslpg'):
+                        if(float(valor_i) > 350):
+                            globales['alarma_gas'] = True
+                            lectura = valor_i
   
 
         ######### luces ########
@@ -230,12 +235,17 @@ def monitorCasa():
         if(globales['alarma_trip'] and not(globales['alarma_enviada'])):
             encenderGrupo(luces['puerta'])
             try:
-                po_client.send_message("Alarma disparada", title="Alarma")
+                po_client.send_message("Alarma disparada", title="Alarma entrada")
                 globales['alarma_enviada'] = True
             except: 
                 print "error envio"
                 globales['alarma_enviada'] = True
      
+        if(globales['alarma_gas'] and not(globales['alarma_gas_enviada'])):
+            po_client.send_message("Alarma de gas, lectura" + lectura, title="Alarma gas")
+            globales['alarma_gas_enviada'] = True
+
+
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
         if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
@@ -283,6 +293,8 @@ def monitorCasa():
                         globales['alarma_trip']= False
                         globales['alarma_enviada'] = False
                         globales['activo'] = True
+                        globales['alarma_gas'] = False
+                        globales['alarma_gas_enviada'] = False
                 if(comando[0]=='mantener_luces'):
                     globales['activo'] = not globales['activo']
                     try:
