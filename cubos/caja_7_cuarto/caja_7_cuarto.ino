@@ -46,7 +46,7 @@ void loop() {
   pirread = digitalRead(pir_pin);
   sound_read = digitalRead(PIN_GATE_IN);
   sound_envelope = analogRead(PIN_ANALOG_IN);
-  if(pirread == 0 || sound_read > 0){
+  if(pirread == 0 || sound_envelope > 20){
     if(tiempo_actual >= tiempo_pir + 2000){
           tiempo_pir = millis();
           tiempo_ultima = millis();
@@ -69,15 +69,16 @@ void registro_enviar(){
   Serial.println(1-pirread);
   Serial.print("det_snd,binary,1,");
   Serial.println(sound_read);   
-  Serial.print("level_snd,binary,1,");
-  Serial.println(sound_envelope);   
+  Serial.print("lev_snd,binary,1,");
+  Serial.println(sound_envelope); 
+  Serial.print("photo,analog,1,");
+  Serial.println(photoread);  
 
   delay(1000);
   //if(bloque_enviar==1){
-    Serial.print("photo,analog,1,");
-    Serial.println(photoread);
+
   //} else {
-    Serial.print("temperature,C,2,"); 
+    Serial.print("temperature,C,1,"); 
     Serial.println(ctemp);
     Serial.print("gaslpg,analog,1,");
     Serial.println(gas_read);  
