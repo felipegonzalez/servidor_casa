@@ -101,6 +101,7 @@ conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 def monitorCasa():
     #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
     po_client = Client("upTSkha71ovvG3Q3KSp68VAZRUwx4h", api_token="aeWBgVcie7cwVm2UrWFsTUa52XdezD")
+    po_client_tere = Client("uF7p3ueWbwbhD9c8xer4QLukbWoppT", api_token="")
 
     #resetear alarma
     globales['alarma'] = False
@@ -220,7 +221,7 @@ def monitorCasa():
                             temperaturas[lugar_i] = float(item[6])
                     ## checar gas
                     if(sensor_i =='gaslpg'):
-                        if(float(valor_i) > 350):
+                        if(float(valor_i) > 250):
                             globales['alarma_gas'] = True
                             lectura = valor_i
   
