@@ -24,7 +24,7 @@ import MySQLdb
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
-lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina']
+lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -34,6 +34,7 @@ myxbees = {
     '0013a20040bf06d4':'estudiof',
     '0013a20040bf962c':'vestidor',
     '0013a20040bf06bd':'cocina'
+    '0013a20040c45639':'cuarto'
     }
 
 
@@ -56,13 +57,13 @@ sonos = SoCo(ip_sonos)
 
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500,'cuarto':800}
 delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
-    'cocina':2*60}
+    'cocina':2*60,'cuarto':3*60}
 
 # los que tienen cero envían datos según pausas
-delay_registro = {'escalera':1, 'sala':1, 'tv':1, 'estudiof':1, 'puerta':10, 'vestidor':1, 'cocina':1}
+delay_registro = {'escalera':1, 'sala':1, 'tv':1, 'estudiof':1, 'puerta':10, 'vestidor':1, 'cocina':1,'cuarto':1}
 
 # inicializar
 estado_luces={}
@@ -78,7 +79,7 @@ for lugar in lugares:
 
 
 
-temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0}
+temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0}
 
 
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
