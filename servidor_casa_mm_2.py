@@ -33,7 +33,7 @@ myxbees = {
     '0013a20040bef84d':'puerta',
     '0013a20040bf06d4':'estudiof',
     '0013a20040bf962c':'vestidor',
-    '0013a20040bf06bd':'cocina'
+    '0013a20040bf06bd':'cocina',
     '0013a20040c45639':'cuarto'
     }
 
@@ -70,12 +70,13 @@ estado_luces={}
 movimiento={}
 niveles_luz={}
 tiempo_movimiento={}
-
+dormir = {}
 for lugar in lugares:
     estado_luces[lugar] = False
     movimiento[lugar] = False
     niveles_luz[lugar] = 1000
     tiempo_movimiento[lugar] = 0
+    dormir[lugar] = False
 
 
 
@@ -178,6 +179,10 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
+            #if(lugar=='cuarto'):
+            #    print(lugar)
+            #    print(response)
+            #    print('--------')
             st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
             if('rf_data' in response.keys()):
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
@@ -186,7 +191,8 @@ def monitorCasa():
                 #print ocurrencia
                 #print procesar_samples_unif(response, st)
            
-            
+            #if(lugar=='cuarto'):
+            #    print(ocurrencia)
             # niveles de luz y movimiento, puertas
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
@@ -203,6 +209,11 @@ def monitorCasa():
                     if(sensor_i == 'pir'):
                         mov = movimiento[lugar_i]
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
+                    if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
+                        print 'sonido_env: '+valor_i
+                        if(float(valor_i) > 10):
+                            movimiento[lugar_i] = True
+                            print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
                         if(tstamp-tiempo_sonos > 15):
@@ -233,7 +244,7 @@ def monitorCasa():
             if(movimiento[key]):
                 tiempo_movimiento[key] = time.time()
                 if(niveles_luz[key] < nivel_encendido[key]):
-                    if(globales['activo']):
+                    if(globales['activo'] and (not dormir[key])):
                         encenderGrupo(luces[key])
                         estado_luces[key] = True
 
@@ -302,6 +313,13 @@ def monitorCasa():
                         globales['activo'] = True
                         globales['alarma_gas'] = False
                         globales['alarma_gas_enviada'] = False
+                if(comando[0]=='dormir'):
+                    dormir['cuarto'] = not dormir['cuarto']
+                    if(dormir['cuarto']):
+                        decir('Listo para dormir')
+                        apagarGrupo(luces['cuarto'])
+                    else:
+                        decir('Hora de despertar')
                 if(comando[0]=='mantener_luces'):
                     globales['activo'] = not globales['activo']
                     try:
@@ -505,16 +523,16 @@ def decir(texto):
         zp = SoCo(ip_sonos)
         print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
         zp.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
-        alertDuration = zp.get_current_track_info()['duration']
-        sleepTime=float(alertDuration)
-        time.sleep(sleepTime)
-        if len(zp.get_queue()) > 0 and playlistPos > 0:
-            print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
-            zp.play_from_queue(playlistPos)
-            zp.seek(trackPos)
-        else:
-            print 'Resuming %s' % mediaURI
-            zp.play_uri(mediaURI, mediaMeta)
+        #alertDuration = zp.get_current_track_info()['duration']
+        #sleepTime=float(alertDuration)
+        #time.sleep(sleepTime)
+        #if len(zp.get_queue()) > 0 and playlistPos > 0:
+        #    print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
+        #    zp.play_from_queue(playlistPos)
+        #    zp.seek(trackPos)
+        #else:
+        #    print 'Resuming %s' % mediaURI
+         #   zp.play_uri(mediaURI, mediaMeta)
 
 
 # if run as top-level script

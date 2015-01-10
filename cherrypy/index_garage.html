@@ -36,6 +36,13 @@
             });
            e.preventDefault();
          });
+        $("#dormir-a").click(function(e) {
+           $.post("/dormir", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
       $("#apagar-luces").click(function(e) {
            $.post("/apagar_luces", {})
             .done(function(string) {
@@ -43,6 +50,7 @@
             });
            e.preventDefault();
          });
+  
        });
      </script>
    </head>
@@ -62,6 +70,9 @@
 </p>   
     <p>
      <button id="apagar-luces" class="btn btn-primary btn-lg">Apagar luces</button>     
+</p>   
+    <p>
+     <button id="dormir-a" class="btn btn-primary btn-lg">Dormir</button>     
 </p>   
 <div id="respuesta">
          <input type="text" />

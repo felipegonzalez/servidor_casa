@@ -41,6 +41,7 @@ class controlGarage(object):
             commandx = "INSERT INTO pendientes VALUES('abrir_garage','1')"
             cur.execute(commandx)
         return 'Activando garage'
+
 class controlAlarma(object):
     exposed = True
 
@@ -79,7 +80,16 @@ class controlAire(object):
             cur.execute(commandx)
         return 'Enviado comando AC'
 
-
+class activarDormir(object):
+    exposed = True
+    @cherrypy.tools.accept(media='text/plain')
+    def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('dormir','0')"
+            cur.execute(commandx)
+        return 'Comando dormir'
 
 
 class controlPausa(object):
@@ -131,6 +141,11 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
+         '/dormir': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
          '/apagar_luces': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
@@ -153,5 +168,6 @@ if __name__ == '__main__':
     webapp.alarma_des = desAlarma()
     webapp.control_aire = controlAire()
     webapp.apagar_luces = apagarLuces()
+    webapp.dormir = activarDormir()
     cherrypy.quickstart(webapp, '/', conf)
 
