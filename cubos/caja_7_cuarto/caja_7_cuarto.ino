@@ -15,6 +15,7 @@ Adafruit_MCP9808 tempsensor = Adafruit_MCP9808();
 long tiempo_actual;
 long tiempo_ultima;
 long tiempo_pir;
+long tiempo_sonido;
 int pirread = 0;
 int sound_read = 0;
 int sound_envelope = 0;
@@ -37,6 +38,7 @@ void setup()
   tiempo_ultima = millis();
   tiempo_actual = millis();
   tiempo_pir = millis();
+  tiempo_sonido = millis();
   //tiempo_sonido = millis();
   
 }
@@ -46,13 +48,22 @@ void loop() {
   pirread = digitalRead(pir_pin);
   sound_read = digitalRead(PIN_GATE_IN);
   sound_envelope = analogRead(PIN_ANALOG_IN);
-  if(pirread == 0 || sound_envelope > 20){
-    if(tiempo_actual >= tiempo_pir + 2000){
+  if(pirread == 0){
+        if(tiempo_actual >= tiempo_pir + 1500){
           tiempo_pir = millis();
           tiempo_ultima = millis();
           registro_enviar();
       }
   }
+
+   if(sound_envelope > 20){
+    if(tiempo_actual >= tiempo_sonido + 7000){
+          tiempo_sonido = millis();
+          tiempo_ultima = millis();
+          registro_enviar();
+      }
+  }
+
   
   if(tiempo_actual >= tiempo_ultima + 20000){
     registro_enviar();
