@@ -6,5 +6,5 @@ Archivos para automatización de casa
 
 TODO:
 
-- detectar presencia de iphones on ips fijas
-- unificar datos de xbee+arduino y xbee solo
+- detectar presencia en casa y/o cuartos individuales
+- 
