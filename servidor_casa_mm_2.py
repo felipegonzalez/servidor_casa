@@ -194,6 +194,7 @@ def monitorCasa():
             #if(lugar=='cuarto'):
             #    print(ocurrencia)
             # niveles de luz y movimiento, puertas
+            #print(ocurrencia)
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
                     sensor_i = item[3]
@@ -334,24 +335,26 @@ def monitorCasa():
             c.execute('DELETE FROM pendientes')
             
         ### registrar sensores
-        try:
-            if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
-                mom_registrar[lugar] = time.time()
+        #try:
+        if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
+            mom_registrar[lugar] = time.time()
+            #print ocurrencia
+            if 'ocurrencia' in locals():
                 for item in ocurrencia:
                     #print(item)
                     update_ultimas(item, con2, str(st))
-        except:
-            print("error registro ultimas")
+        #except:
+        #    print("error registro ultimas")
 
 
-        ## si el lugar le toca registro, actualizar base de datos
-        if 'lugar' in locals():
+        ## i el lugar le toca registro, actualizar base de datos
+        if 'lugar' in locals() and 'ocurrencia' in locals():
             if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
                 tiempos_registro[lugar] = time.time()
-                try:
-                    escribir_ocurrencia_mysql(ocurrencia, conrds)
-                except:
-                    print "Error escribir base completa"
+                #try:
+                escribir_ocurrencia_mysql(ocurrencia, conrds)
+                #except:
+                #    print "Error escribir base completa"
      
         # datos estados en consola    
         if((time.time()-log_time) > 5):
@@ -465,8 +468,8 @@ def update_ultimas(item, con2, ts):
             cur2.execute(command1)
             cur2.execute(command2)
     except:
-        print command1
-        print command2
+        #print command1
+        #print command2
         print "Error sqlite ultimas"
 
 def touch(fname, times=None):
