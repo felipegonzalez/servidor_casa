@@ -19,6 +19,7 @@ import os
 import sys
 from soco import SoCo
 from say import text2mp3 
+import dweepy
 #import Adafruit_BBIO.GPIO as GPIO
 import MySQLdb 
 
@@ -71,6 +72,7 @@ movimiento={}
 niveles_luz={}
 tiempo_movimiento={}
 dormir = {}
+movimiento_st={}
 for lugar in lugares:
     estado_luces[lugar] = False
     movimiento[lugar] = False
@@ -78,6 +80,7 @@ for lugar in lugares:
     tiempo_movimiento[lugar] = 0
     dormir[lugar] = False
 
+anterior = time.time()
 
 
 temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0}
@@ -129,12 +132,14 @@ def monitorCasa():
     tiempo_sonos = time.time()
     time_loop = time.time() 
     log_time = time.time()
+    dweepy_time = time.time()
 
     tiempos_registro = {}
     mom_registrar = {}
     for lugar in lugares:
         tiempos_registro[lugar] = 0
         mom_registrar[lugar] = 0
+        movimiento_st[lugar] = 0.0
     
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
@@ -153,7 +158,7 @@ def monitorCasa():
 
     tstamp = time.time()
 
-
+    anterior = time.time()
     #################### ciclo de monitoreo #########################
 
     while True:
@@ -250,6 +255,19 @@ def monitorCasa():
                         encenderGrupo(luces[key])
                         estado_luces[key] = True
 
+        
+        delta = time.time() - anterior
+        #print delta
+        for key in lugares:
+            movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.05*delta))            #print movimiento_st
+        if(-(dweepy_time - time.time())>10):
+            dweepy_time = time.time()
+            mov_send = {}
+            for lugar in lugares:
+                mov_send[lugar] = str(round(movimiento_st[lugar],2))
+            print mov_send
+            dweepy.dweet_for('well-groomed-move',mov_send)
+        anterior = time.time()
         ########## alarmas #########
         ## alertar por mensaje si alarma
         if(globales['alarma_trip'] and not(globales['alarma_enviada'])):
@@ -346,7 +364,7 @@ def monitorCasa():
 
         ## actividades programadas
         if(dormir['cuarto'] and dt.hour==8):
-            decir('Hora de despertar')
+            decir('Hora de despertar para Teresita y Felipe')
             dormir['cuarto'] = False
 
 
