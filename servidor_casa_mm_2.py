@@ -103,7 +103,7 @@ conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 def monitorCasa():
     #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
     po_client = Client("upTSkha71ovvG3Q3KSp68VAZRUwx4h", api_token="aeWBgVcie7cwVm2UrWFsTUa52XdezD")
-    po_client_tere = Client("uF7p3ueWbwbhD9c8xer4QLukbWoppT", api_token="")
+    #po_client_tere = Client("uF7p3ueWbwbhD9c8xer4QLukbWoppT", api_token="")
 
     #resetear alarma
     globales['alarma'] = False
@@ -160,7 +160,7 @@ def monitorCasa():
         #tstamp del ciclo
         #print tstamp - time.time()
         tstamp = time.time()
-
+        dt = datetime.datetime.fromtimestamp(tstamp, tz=tzone)
          # apagar si no se ha detectado movimiento en un rato
         for key in tiempo_movimiento:
             if((tstamp - tiempo_movimiento[key] ) >= delay_luces_l[key]):
@@ -234,8 +234,9 @@ def monitorCasa():
                             temperaturas[lugar_i] = float(item[6])
                     ## checar gas
                     if(sensor_i =='gaslpg'):
-                        if(float(valor_i) > 250):
+                        if(float(valor_i) > 330):
                             globales['alarma_gas'] = True
+                            lugar_gas = lugar_i
                             lectura = valor_i
   
 
@@ -261,8 +262,16 @@ def monitorCasa():
                 globales['alarma_enviada'] = True
      
         if(globales['alarma_gas'] and not(globales['alarma_gas_enviada'])):
-            po_client.send_message("Alarma de gas, lectura" + lectura, title="Alarma gas")
+            po_client.send_message("Alarma de gas en "+lugar_gas+", lectura: " + lectura, title="Alarma gas")
             globales['alarma_gas_enviada'] = True
+            try:
+                sonos.volume = 90
+                decir('Alarma de gas en ' + lugar_gas)
+                time.sleep(8)
+                decir('Alarma de gas en ' + lugar_gas)
+                sonos.volume = 40
+            except:
+                print "Error decir alarma de gas"
 
 
         ############ temperatura #########
@@ -334,6 +343,14 @@ def monitorCasa():
                         print "Error activo escribir"
             c.execute('DELETE FROM pendientes')
             
+
+        ## actividades programadas
+        if(dormir['cuarto'] and dt.hour==8):
+            decir('Hora de despertar')
+            dormir['cuarto'] = False
+
+
+
         ### registrar sensores
         #try:
         if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
@@ -386,14 +403,17 @@ def escribir_ocurrencia(ocurrencia, conlocal):
         
 
 def escribir_ocurrencia_mysql(ocurrencia, conrds):
-    with conrds:
-        for item in ocurrencia:
-            if(len(item) > 6):
-                cur = conrds.cursor()
-                comand_base = 'insert into mediciones (tiempo_reg, xbee, lugar, tipo, unidad, num_sensor, valor) VALUES '
-                comand_2 ="('"+item[0]+"','"+item[1]+"','"+item[2]+"','"+item[3]+"','"+item[4]+"','"+str(int(item[5]))+"',"+str(float(item[6]))+")"
-                commandx = comand_base+comand_2
-                cur.execute(commandx)
+    try:
+        with conrds:
+            for item in ocurrencia:
+                if(len(item) > 6):
+                    cur = conrds.cursor()
+                    comand_base = 'insert into mediciones (tiempo_reg, xbee, lugar, tipo, unidad, num_sensor, valor) VALUES '
+                    comand_2 ="('"+item[0]+"','"+item[1]+"','"+item[2]+"','"+item[3]+"','"+item[4]+"','"+str(int(item[5]))+"',"+str(float(item[6]))+")"
+                    commandx = comand_base+comand_2
+                    cur.execute(commandx)
+    except:
+        print "Error escribir_ocurrencia_mysql"
 
 
 def procesar_rf(response, st):
