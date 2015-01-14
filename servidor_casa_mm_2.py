@@ -260,7 +260,7 @@ def monitorCasa():
         #print delta
         for key in lugares:
             movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.05*delta))            #print movimiento_st
-        if(-(dweepy_time - time.time())>10):
+        if(time.time() - dweepy_time > 20):
             dweepy_time = time.time()
             mov_send = {}
             for lugar in lugares:
