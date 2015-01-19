@@ -17,6 +17,7 @@ import math
 import io
 import os
 import sys
+import subprocess
 from soco import SoCo
 from say import text2mp3 
 import dweepy
@@ -134,7 +135,8 @@ def monitorCasa():
     log_time = time.time()
     dweepy_time = time.time()
     dweepy_time_2 = time.time()
-
+    felipe_phone_time = time.time()
+    
     tiempos_registro = {}
     mom_registrar = {}
     for lugar in lugares:
@@ -246,7 +248,7 @@ def monitorCasa():
                     ## checar gas
                     if(sensor_i =='gaslpg'):
                         gas[lugar_i] = valor_i
-                        if(float(valor_i) > 330):
+                        if(float(valor_i) > 400):
                             globales['alarma_gas'] = True
                             lugar_gas = lugar_i
                             lectura = valor_i
@@ -266,7 +268,7 @@ def monitorCasa():
         delta = time.time() - anterior
         #print delta
         for key in lugares:
-            movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.03*delta))  
+            movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.01*delta))  
 
 
         if(time.time() - dweepy_time > 12):
@@ -284,7 +286,7 @@ def monitorCasa():
             dweepy.dweet_for('cynical-powder',gas_send)
             dweepy.dweet_for('fierce-cup',puertas)
 
-            #kindly-police
+           
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 15):
             print "registro dw"
@@ -370,7 +372,7 @@ def monitorCasa():
                         chapa(True, xbee = xbee)
                         for key in luces:
                             apagarGrupo(luces[key])
-                    globales['activo'] = False
+                        globales['activo'] = False
                     if(comando[1]=='0'):
                         globales['alarma'] = False
                         tocar("alarma_desactivada.mp3")
@@ -415,6 +417,14 @@ def monitorCasa():
             dormir['cuarto'] = False
 
 
+        ## pings
+        if(time.time() - felipe_phone_time > 10):
+            felipe_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.6' + ' > /dev/null', shell=True)
+            felipe_phone_time = time.time()
+            if(felipe_iphone==0):
+                globales['felipe'] = True
+            else:
+                globales['felipe'] = False
 
         ### registrar sensores
         #try:

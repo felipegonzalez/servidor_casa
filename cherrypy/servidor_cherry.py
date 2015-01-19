@@ -111,7 +111,7 @@ class chapaAbrir(object):
             cur = con.cursor()
             commandx = "INSERT INTO pendientes VALUES('chapa','0')"
             cur.execute(commandx)
-        return 'Cerrar chapa'
+        return 'Abrir chapa'
 
 class controlPausa(object):
      exposed = True
