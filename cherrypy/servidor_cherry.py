@@ -91,6 +91,27 @@ class activarDormir(object):
             cur.execute(commandx)
         return 'Comando dormir'
 
+class chapaCerrar(object):
+    exposed = True
+    @cherrypy.tools.accept(media='text/plain')
+    def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('chapa','1')"
+            cur.execute(commandx)
+        return 'Cerrar chapa'
+
+class chapaAbrir(object):
+    exposed = True
+    @cherrypy.tools.accept(media='text/plain')
+    def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('chapa','0')"
+            cur.execute(commandx)
+        return 'Cerrar chapa'
 
 class controlPausa(object):
      exposed = True
@@ -146,6 +167,16 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
+        '/lock': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
+        '/unlock': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
          '/apagar_luces': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
@@ -169,5 +200,7 @@ if __name__ == '__main__':
     webapp.control_aire = controlAire()
     webapp.apagar_luces = apagarLuces()
     webapp.dormir = activarDormir()
+    webapp.lock = chapaCerrar()
+    webapp.unlock = chapaAbrir()
     cherrypy.quickstart(webapp, '/', conf)
 

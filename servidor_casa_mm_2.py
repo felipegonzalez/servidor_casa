@@ -40,7 +40,7 @@ myxbees = {
 
 
 #mapeo de xbee pins )para cajas sin arduino)
-xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo'},
+xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo','dio-4':'cerrar','dio-0':'abrir'},
         'escalera':{'dio-4':'pir'}}
 
 ip_hue ="http://192.168.100.2/api/newdeveloper/"
@@ -60,8 +60,8 @@ sonos = SoCo(ip_sonos)
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500,'cuarto':600}
-delay_luces_l = {'tv':5*60, 'sala':4*60, 'puerta':60, 'escalera':30, 'estudiof':3*60,'vestidor':2*60,
-    'cocina':2*60,'cuarto':3*60}
+delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
+    'cocina':3*60,'cuarto':5*60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':1, 'sala':1, 'tv':1, 'estudiof':1, 'puerta':10, 'vestidor':1, 'cocina':1,'cuarto':1}
@@ -84,13 +84,13 @@ anterior = time.time()
 
 
 temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0}
-
-
+gas = {'cocina':0.0, 'cuarto':0.0}
+puertas = {'puerta':1, 'estudiof':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False, 'felipe':True, 'alarma_gas':False, 'alarma_gas_enviada':False}
+    'ac_encendido':False, 'felipe':True, 'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False}
 
-
+#xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
 SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
 
@@ -133,6 +133,7 @@ def monitorCasa():
     time_loop = time.time() 
     log_time = time.time()
     dweepy_time = time.time()
+    dweepy_time_2 = time.time()
 
     tiempos_registro = {}
     mom_registrar = {}
@@ -140,6 +141,7 @@ def monitorCasa():
         tiempos_registro[lugar] = 0
         mom_registrar[lugar] = 0
         movimiento_st[lugar] = 0.0
+        estado_luces[lugar] = False
     
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
@@ -179,6 +181,7 @@ def monitorCasa():
 
         ## leer xbee y procesar ############################
         response = xbee.wait_read_frame(timeout=0.15)
+
         #if(len(response)>0):
         #    print(response)
         if('source_addr_long' in response.keys()):
@@ -222,6 +225,7 @@ def monitorCasa():
                             print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
+                        puertas[lugar_i] = 0
                         if(tstamp-tiempo_sonos > 15):
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
@@ -230,6 +234,8 @@ def monitorCasa():
                                 tiempo_sonos=time.time() + 120
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
+                    if(sensor_i=='puerta' and valor_i=='1'):
+                        puertas[lugar_i] = 1
                     ## temperaturas
                     if(sensor_i=='temperature'):
                         if(temperaturas[lugar_i] > 0):
@@ -239,6 +245,7 @@ def monitorCasa():
                             temperaturas[lugar_i] = float(item[6])
                     ## checar gas
                     if(sensor_i =='gaslpg'):
+                        gas[lugar_i] = valor_i
                         if(float(valor_i) > 330):
                             globales['alarma_gas'] = True
                             lugar_gas = lugar_i
@@ -259,15 +266,43 @@ def monitorCasa():
         delta = time.time() - anterior
         #print delta
         for key in lugares:
-            movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.05*delta))            #print movimiento_st
-        if(time.time() - dweepy_time > 20):
+            movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.03*delta))  
+
+
+        if(time.time() - dweepy_time > 12):
             dweepy_time = time.time()
+            print "registro dwepp2"
             mov_send = {}
             for lugar in lugares:
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
             print mov_send
             dweepy.dweet_for('well-groomed-move',mov_send)
+            
+            gas_send = {}
+            for key in gas:
+                gas_send[key] = str(gas[key])
+            dweepy.dweet_for('cynical-powder',gas_send)
+            dweepy.dweet_for('fierce-cup',puertas)
+
+            #kindly-police
         anterior = time.time()
+        if(time.time() - dweepy_time_2 > 15):
+            print "registro dw"
+            dweepy_time_2 = time.time()
+            temp_send = {}
+            for key in temperaturas:
+                temp_send[key] = str(round(temperaturas[key], 2))
+            dweepy.dweet_for('zany-stomach',temp_send)
+            luz_send = {}
+            for key in niveles_luz:
+                luz_send[key] =str(niveles_luz[key])
+            dweepy.dweet_for('kindly-police',luz_send) 
+            glob_send={}
+            for key in globales:
+                glob_send[key] = str(int(globales[key]))
+            dweepy.dweet_for('pretty-instrument',glob_send)
+
+
         ########## alarmas #########
         ## alertar por mensaje si alarma
         if(globales['alarma_trip'] and not(globales['alarma_enviada'])):
@@ -295,8 +330,10 @@ def monitorCasa():
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
         if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
-            xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
-            globales['ac_encendido'] = True
+            if(movimiento_st['estudiof'] > 0.01):
+                xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+                
+                globales['ac_encendido'] = True
         if(temperaturas['tv'] < 22 and globales['ac_encendido']):
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = False
@@ -330,12 +367,14 @@ def monitorCasa():
                         globales['alarma_enviada'] = False
                         globales['alarma_trip'] = False
                         tocar("alarma_activada.mp3")
+                        chapa(True, xbee = xbee)
                         for key in luces:
                             apagarGrupo(luces[key])
                     globales['activo'] = False
                     if(comando[1]=='0'):
                         globales['alarma'] = False
                         tocar("alarma_desactivada.mp3")
+                        chapa(False, xbee=xbee)
                         globales['alarma_trip']= False
                         globales['alarma_enviada'] = False
                         globales['activo'] = True
@@ -346,8 +385,16 @@ def monitorCasa():
                     if(dormir['cuarto']):
                         decir('Listo para dormir')
                         apagarGrupo(luces['cuarto'])
+                        chapa(True, xbee = xbee)
                     else:
                         decir('Hora de despertar')
+
+                if(comando[0]=='chapa' and comando[1]=='1'):
+                    print "Cerrar chapa"
+                    chapa(True, xbee = xbee)
+                if(comando[0]=='chapa' and comando[1]=='0'):
+                    print "Abrir chapa"
+                    chapa(False, xbee = xbee)
                 if(comando[0]=='mantener_luces'):
                     globales['activo'] = not globales['activo']
                     try:
@@ -400,6 +447,7 @@ def monitorCasa():
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
             print "Movimiento, ", movimiento
+            print "Mov st ", movimiento_st
 
 
 
@@ -490,6 +538,20 @@ def encenderGrupo(grupo):
 def apagarTodas(luces):
     for zona in luces:
         apagarGrupo(luces[zona])
+
+def chapa(cerrar, xbee):
+    if(cerrar):
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
+        time.sleep(0.2)
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x04')
+        globales['chapa'] = True
+    else:
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x05')
+        time.sleep(0.2)
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x04')
+        globales['chapa'] = False
+
+
 
 def update_ultimas(item, con2, ts):
     try:
