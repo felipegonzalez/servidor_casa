@@ -463,19 +463,6 @@ def monitorCasa():
 
             
 ##############################################################################
-def escribir_ocurrencia(ocurrencia, conlocal):
-    with conlocal:
-        for item in ocurrencia:
-           lugar_x = item[2]
-           if(len(item) > 6):
-               curds = conlocal.cursor()
-               comand_base = 'insert into monitorlocal (tiempo_reg, xbee, lugar, tipo, unidad, num_sensor, valor) VALUES '
-               #comand_2 ="('"+item[0]+"','"+item[1]+"','"+item[2]+"','"+item[3]+"','"+item[4]+"','"+item[5]+"',"+str(float(item[6]))+")"
-               comand_3 = "('%s','%s','%s','%s','%s','%s',%s)" % (item[0],item[1],item[2],item[3],item[4],item[5],float(item[6]))
-               commandx = comand_base+comand_3
-               #print "."
-               #print commandx
-               conlocal.execute(commandx)
         
 
 def escribir_ocurrencia_mysql(ocurrencia, conrds):
