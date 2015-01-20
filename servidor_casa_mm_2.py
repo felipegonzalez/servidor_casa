@@ -136,7 +136,7 @@ def monitorCasa():
     dweepy_time = time.time()
     dweepy_time_2 = time.time()
     felipe_phone_time = time.time()
-    
+
     tiempos_registro = {}
     mom_registrar = {}
     for lugar in lugares:
@@ -428,13 +428,13 @@ def monitorCasa():
 
         ### registrar sensores
         #try:
-        if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
-            mom_registrar[lugar] = time.time()
-            #print ocurrencia
-            if 'ocurrencia' in locals():
-                for item in ocurrencia:
-                    #print(item)
-                    update_ultimas(item, con2, str(st))
+        #if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
+        #    mom_registrar[lugar] = time.time()
+        #    #print ocurrencia
+        #    if 'ocurrencia' in locals():
+        #        for item in ocurrencia:
+        #            #print(item)
+        #            update_ultimas(item, con2, str(st))
         #except:
         #    print("error registro ultimas")
 
