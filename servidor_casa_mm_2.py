@@ -56,7 +56,8 @@ LANGUAGE = 'es' # speech language
 texto_1 = "Iniciando sistema"
 sonos = SoCo(ip_sonos)
 
-
+ip_felipe = '192.168.100.6'
+ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
@@ -89,7 +90,8 @@ gas = {'cocina':0.0, 'cuarto':0.0}
 puertas = {'puerta':1, 'estudiof':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False, 'felipe':True, 'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False}
+    'ac_encendido':False, 'felipe':True, 'tere':False,
+    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
@@ -189,6 +191,7 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
+            print "***** " + lugar
             #if(lugar=='cuarto'):
             #    print(lugar)
             #    print(response)
@@ -278,14 +281,19 @@ def monitorCasa():
             for lugar in lugares:
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
             print mov_send
-            dweepy.dweet_for('well-groomed-move',mov_send)
+            try:
+                dweepy.dweet_for('well-groomed-move',mov_send)
+            except:
+                print "error dweepy"
             
             gas_send = {}
             for key in gas:
                 gas_send[key] = str(gas[key])
-            dweepy.dweet_for('cynical-powder',gas_send)
-            dweepy.dweet_for('fierce-cup',puertas)
-
+            try:
+                dweepy.dweet_for('cynical-powder',gas_send)
+                dweepy.dweet_for('fierce-cup',puertas)
+            except:
+                print "error dweepy"
            
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 15):
@@ -298,11 +306,15 @@ def monitorCasa():
             luz_send = {}
             for key in niveles_luz:
                 luz_send[key] =str(niveles_luz[key])
-            dweepy.dweet_for('kindly-police',luz_send) 
+            
             glob_send={}
             for key in globales:
                 glob_send[key] = str(int(globales[key]))
-            dweepy.dweet_for('pretty-instrument',glob_send)
+            try:
+                dweepy.dweet_for('kindly-police',luz_send) 
+                dweepy.dweet_for('pretty-instrument',glob_send)
+            except:
+                print "error dweepy"
 
 
         ########## alarmas #########
@@ -420,11 +432,17 @@ def monitorCasa():
         ## pings
         if(time.time() - felipe_phone_time > 10):
             felipe_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.6' + ' > /dev/null', shell=True)
+            tere_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.7' + ' > /dev/null', shell=True)
             felipe_phone_time = time.time()
             if(felipe_iphone==0):
                 globales['felipe'] = True
             else:
                 globales['felipe'] = False
+            if(tere_iphone==0):
+                globales['tere'] = True
+            else:
+                globales['tere'] = False
+
 
         ### registrar sensores
         #try:
