@@ -195,7 +195,7 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
-            print "***** " + lugar
+            #print "***** " + lugar
             if(lugar=='cocina_entrada'):
                 print(lugar)
                 print(response)
@@ -305,16 +305,21 @@ def monitorCasa():
             try:
                 dweepy.dweet_for('well-groomed-move',mov_send)
             except:
-                print "error dweepy"
+                print "error dweepy 1"
             
             gas_send = {}
             for key in gas:
                 gas_send[key] = str(gas[key])
+            hue_send = {}
+            for key in estado_hue:
+                hue_send[key] = str(int(estado_hue[key]))
             try:
                 dweepy.dweet_for('cynical-powder',gas_send)
                 dweepy.dweet_for('fierce-cup',puertas)
+                dweepy.dweet_for('pleasant-fairies', hue_send)
+                print 'pleasant-fairies'+str(hue_send)
             except:
-                print "error dweepy"
+                print "error dweepy 2"
            
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 15):
@@ -326,7 +331,7 @@ def monitorCasa():
             try:
                 dweepy.dweet_for('zany-stomach',temp_send)
             except:
-                print "Error dweepy zany"
+                print "Error dweepy zany 3"
             luz_send = {}
             for key in niveles_luz:
                 luz_send[key] =str(niveles_luz[key])
@@ -338,7 +343,7 @@ def monitorCasa():
                 dweepy.dweet_for('kindly-police',luz_send) 
                 dweepy.dweet_for('pretty-instrument',glob_send)
             except:
-                print "error dweepy"
+                print "error dweepy 4"
 
 
         ########## alarmas #########
