@@ -23,6 +23,7 @@ from say import text2mp3
 import dweepy
 #import Adafruit_BBIO.GPIO as GPIO
 import MySQLdb 
+import cPickle
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
@@ -105,7 +106,7 @@ con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
 concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
 conlocal = lite.connect('/Volumes/mmshared/bdatos/temp_monitor.db')
 conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
-
+con_dweet= lite.connect('/Volumes/mmshared/bdatos/to_dweet.db')
 
 def monitorCasa():
     #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
@@ -268,7 +269,7 @@ def monitorCasa():
         if(time.time()-check_lights_time > 10):
             try:
                 check_lights_time = time.time()
-                r_state = requests.get(ip_hue+'lights/', timeout=0.2)
+                r_state = requests.get(ip_hue+'lights/', timeout=0.10)
                 rs = r_state.json()
                 for key in rs:
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
@@ -303,7 +304,8 @@ def monitorCasa():
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
             print mov_send
             try:
-                dweepy.dweet_for('well-groomed-move',mov_send)
+                #dweepy.dweet_for('well-groomed-move',mov_send)
+                save_dweet('well-groomed-move',mov_send)
             except:
                 print "error dweepy 1"
             
@@ -313,13 +315,16 @@ def monitorCasa():
             hue_send = {}
             for key in estado_hue:
                 hue_send[key] = str(int(estado_hue[key]))
-            try:
-                dweepy.dweet_for('cynical-powder',gas_send)
-                dweepy.dweet_for('fierce-cup',puertas)
-                dweepy.dweet_for('pleasant-fairies', hue_send)
-                print 'pleasant-fairies'+str(hue_send)
-            except:
-                print "error dweepy 2"
+            #try:
+                #dweepy.dweet_for('cynical-powder',gas_send)
+                #dweepy.dweet_for('fierce-cup',puertas)
+                #dweepy.dweet_for('pleasant-fairies', hue_send)
+            save_dweet('cynical-powder',gas_send)
+            save_dweet('fierce-cup',puertas)
+            save_dweet('pleasant-fairies',hue_send)
+            #print 'pleasant-fairies'+str(hue_send)
+            #except:
+            #    print "error dweepy 2"
            
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 15):
@@ -329,7 +334,8 @@ def monitorCasa():
             for key in temperaturas:
                 temp_send[key] = str(round(temperaturas[key], 2))
             try:
-                dweepy.dweet_for('zany-stomach',temp_send)
+                #dweepy.dweet_for('zany-stomach',temp_send)
+                save_dweet('zany-stomach',temp_send)
             except:
                 print "Error dweepy zany 3"
             luz_send = {}
@@ -340,8 +346,10 @@ def monitorCasa():
             for key in globales:
                 glob_send[key] = str(int(globales[key]))
             try:
-                dweepy.dweet_for('kindly-police',luz_send) 
-                dweepy.dweet_for('pretty-instrument',glob_send)
+                #dweepy.dweet_for('kindly-police',luz_send) 
+                #dweepy.dweet_for('pretty-instrument',glob_send)
+                save_dweet('kindly-police',luz_send) 
+                save_dweet('pretty-instrument',glob_send)
             except:
                 print "error dweepy 4"
 
@@ -497,11 +505,14 @@ def monitorCasa():
             if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
                 tiempos_registro[lugar] = time.time()
                 #try:
+                #print "Escribir mysql"
                 escribir_ocurrencia_mysql(ocurrencia, conrds)
                 #except:
                 #    print "Error escribir base completa"
      
         # datos estados en consola    
+        
+        
         if((time.time()-log_time) > 5):
             print '---------------------'
             print 'tiempo loop', time.time()- tstamp
@@ -517,7 +528,19 @@ def monitorCasa():
 
             
 ##############################################################################
-        
+def save_dweet(thing, obj):
+    print "Saving dweets"
+    
+    with con_dweet:
+        curr_d = con_dweet.cursor()
+        pdata = cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL)
+        st_command="insert into dweets (thing, dweet) values ("+thing+",:data)"
+        curr_d.execute("insert into dweets (thing, dweet) values (?,?)", [thing,lite.Binary(pdata)])
+    #except:
+    #    "error al escribir a base de dweets"
+
+
+
 
 def escribir_ocurrencia_mysql(ocurrencia, conrds):
     try:
