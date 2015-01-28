@@ -57,6 +57,20 @@
             });
            e.preventDefault();
          });
+        $("#luces-cocina").click(function(e) {
+           $.post("/lucescocina", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+        $("#apagar-cocina").click(function(e) {
+           $.post("/apagarcocina", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
       $("#apagar-luces").click(function(e) {
            $.post("/apagar_luces", {})
             .done(function(string) {
@@ -76,12 +90,22 @@
      <button id="aire" class="btn btn-default btn-lg">Aire TV</button>     
 </td><td  style="padding:5px">
      <button id="apagar-luces" class="btn btn-default btn-lg">Apagar luces</button>     
-</td><td  style="padding:5px">
+</td></tr>
+<tr>
+  <td  style="padding:5px">
+     <button id="luces-cocina" class="btn btn-default btn-lg">Prender cocina</button>     
+</td>
+  <td  style="padding:5px">
+     <button id="apagar-cocina" class="btn btn-default btn-lg">Apagar cocina</button>     
+</td>
+  </tr>
+</table> 
+
+<table class="table"><tr>
+<td  style="padding:6px" colspan="2">
      <button id="dormir-a" class="btn btn-default btn-lg">Dormir</button>     
 </td></tr>
-</table> 
-  <table class="table">
-<tr>  <td style="padding:5px" colspan="2">
+<tr>  <td style="padding:6px" colspan="2">
      <button id="accion-garage" class="btn btn-primary btn-lg">Garage</button>     
 </td></tr> 
 

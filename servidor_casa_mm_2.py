@@ -36,7 +36,8 @@ myxbees = {
     '0013a20040bf06d4':'estudiof',
     '0013a20040bf962c':'vestidor',
     '0013a20040bf06bd':'cocina',
-    '0013a20040c45639':'cuarto'
+    '0013a20040c45639':'cuarto',
+    '0013a20040bef862':'cocina_entrada'
     }
 
 
@@ -126,6 +127,8 @@ def monitorCasa():
         estado_luces[key] = False
         print "Luces activas, apagadas " + key
     
+
+
     #limpiar comandos pendientes
     with concom:
         c = concom.cursor()
@@ -138,8 +141,9 @@ def monitorCasa():
     dweepy_time = time.time()
     dweepy_time_2 = time.time()
     felipe_phone_time = time.time()
-
+    check_lights_time = time.time()
     tiempos_registro = {}
+    estado_hue={}
     mom_registrar = {}
     for lugar in lugares:
         tiempos_registro[lugar] = 0
@@ -192,10 +196,10 @@ def monitorCasa():
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
             print "***** " + lugar
-            #if(lugar=='cuarto'):
-            #    print(lugar)
-            #    print(response)
-            #    print('--------')
+            if(lugar=='cocina_entrada'):
+                print(lugar)
+                print(response)
+                print('--------')
             st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
             if('rf_data' in response.keys()):
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
@@ -258,6 +262,23 @@ def monitorCasa():
   
 
         ######### luces ########
+
+            #checar focos
+
+        if(time.time()-check_lights_time > 10):
+            try:
+                check_lights_time = time.time()
+                r_state = requests.get(ip_hue+'lights/', timeout=0.2)
+                rs = r_state.json()
+                for key in rs:
+                    estado_hue[rs[key]['name']] = rs[key]['state']['on']
+                print estado_hue
+            except:
+                print "error getting light states"
+
+        
+
+
         # encender luces donde haya movimiento, si están apagadas?
         for key in movimiento:
             if(movimiento[key]):
@@ -302,7 +323,10 @@ def monitorCasa():
             temp_send = {}
             for key in temperaturas:
                 temp_send[key] = str(round(temperaturas[key], 2))
-            dweepy.dweet_for('zany-stomach',temp_send)
+            try:
+                dweepy.dweet_for('zany-stomach',temp_send)
+            except:
+                print "Error dweepy zany"
             luz_send = {}
             for key in niveles_luz:
                 luz_send[key] =str(niveles_luz[key])
@@ -402,6 +426,12 @@ def monitorCasa():
                         chapa(True, xbee = xbee)
                     else:
                         decir('Hora de despertar')
+                if(comando[0]=='luces_cocina' and comando[1]=='1'):
+                    print "Prender cocina"
+                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
+                if(comando[0]=='luces_cocina' and comando[1]=='0'):
+                    print "Apagar cocina"
+                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
                 if(comando[0]=='chapa' and comando[1]=='1'):
                     print "Cerrar chapa"
@@ -476,6 +506,7 @@ def monitorCasa():
             print "Temperatura, ", temperaturas
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
+            #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 
 
@@ -565,6 +596,7 @@ def chapa(cerrar, xbee):
         time.sleep(0.2)
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x04')
         globales['chapa'] = False
+
 
 
 

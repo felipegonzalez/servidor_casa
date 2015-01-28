@@ -123,6 +123,29 @@ class controlPausa(object):
          return 'cambiar pausa'  
 
 
+class lucesCocina(object):
+     exposed = True
+     @cherrypy.tools.accept(media='text/plain')
+     def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('luces_cocina','1')"
+            cur.execute(commandx)
+        return 'Apagando luces' 
+
+
+class apagarCocina(object):
+     exposed = True
+     @cherrypy.tools.accept(media='text/plain')
+     def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('luces_cocina','0')"
+            cur.execute(commandx)
+        return 'Apagando luces' 
+
 class apagarLuces(object):
      exposed = True
      @cherrypy.tools.accept(media='text/plain')
@@ -133,7 +156,6 @@ class apagarLuces(object):
             commandx = "INSERT INTO pendientes VALUES('apagar_luces','0')"
             cur.execute(commandx)
         return 'Apagando luces' 
-
 
 if __name__ == '__main__':
     cherrypy.config.update({'server.socket_port':8090})
@@ -177,6 +199,16 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
+        '/lucescocina': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
+        '/apagarcocina': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
          '/apagar_luces': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
@@ -202,5 +234,8 @@ if __name__ == '__main__':
     webapp.dormir = activarDormir()
     webapp.lock = chapaCerrar()
     webapp.unlock = chapaAbrir()
+    webapp.lucescocina = lucesCocina()
+    webapp.apagarcocina = apagarCocina()
+
     cherrypy.quickstart(webapp, '/', conf)
 
