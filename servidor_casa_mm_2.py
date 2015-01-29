@@ -24,6 +24,9 @@ import dweepy
 #import Adafruit_BBIO.GPIO as GPIO
 import MySQLdb 
 import cPickle
+from collections import deque
+
+tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
@@ -146,16 +149,20 @@ def monitorCasa():
     tiempos_registro = {}
     estado_hue={}
     mom_registrar = {}
+    tiempo_encendido={}
     for lugar in lugares:
         tiempos_registro[lugar] = 0
         mom_registrar[lugar] = 0
         movimiento_st[lugar] = 0.0
         estado_luces[lugar] = False
+        tiempo_encendido[lugar] = 0
     
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
     for key in mom_registrar:
         mom_registrar[key] = time.time()
+    for key in tiempo_encendido:
+        tiempo_encendido[key] = 0
     
 
 
@@ -183,6 +190,10 @@ def monitorCasa():
                 if(globales['activo'] and estado_luces[key]):
                     apagarGrupo(luces[key])
                     estado_luces[key] = False
+                if(globales['activo'] and key=='cocina'):
+                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+
+
 
         ##en inicio todos los movimientos son falsos
         for lugar in lugares:
@@ -266,10 +277,11 @@ def monitorCasa():
 
             #checar focos
 
-        if(time.time()-check_lights_time > 10):
+        if(time.time()-check_lights_time > 15):
+            print "Check lights"
             try:
                 check_lights_time = time.time()
-                r_state = requests.get(ip_hue+'lights/', timeout=0.10)
+                r_state = requests.get(ip_hue+'lights/', timeout=0.05)
                 rs = r_state.json()
                 for key in rs:
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
@@ -285,9 +297,14 @@ def monitorCasa():
             if(movimiento[key]):
                 tiempo_movimiento[key] = time.time()
                 if(niveles_luz[key] < nivel_encendido[key]):
-                    if(globales['activo'] and (not dormir[key])):
-                        encenderGrupo(luces[key])
-                        estado_luces[key] = True
+                    if(globales['activo'] and (not dormir[key])):       
+                        if(time.time() - tiempo_encendido[key] > 10):
+                            print "Encender luces"
+                            tiempo_encendido[key] = time.time()
+                            encenderGrupo(luces[key])
+                            estado_luces[key] = True
+                            if(key=='cocina'):
+                                xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
 
         
         delta = time.time() - anterior
@@ -298,7 +315,7 @@ def monitorCasa():
 
         if(time.time() - dweepy_time > 12):
             dweepy_time = time.time()
-            print "registro dwepp2"
+            print "registro dw 1"
             mov_send = {}
             for lugar in lugares:
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
@@ -328,7 +345,7 @@ def monitorCasa():
            
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 15):
-            print "registro dw"
+            print "registro dw 2"
             dweepy_time_2 = time.time()
             temp_send = {}
             for key in temperaturas:
@@ -511,12 +528,15 @@ def monitorCasa():
                 #    print "Error escribir base completa"
      
         # datos estados en consola    
-        
+        #print 'tiempo loop', time.time()- tstamp
+        nuevo_tiempo = time.time() - tstamp
+        tiempos.append(nuevo_tiempo)
+        ant = tiempos.popleft()
+        #time_loop = time.time()
         
         if((time.time()-log_time) > 5):
             print '---------------------'
-            print 'tiempo loop', time.time()- tstamp
-            time_loop = time.time()
+            print 'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))
             log_time = time.time()
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
@@ -612,6 +632,7 @@ def encenderGrupo(grupo):
 def apagarTodas(luces):
     for zona in luces:
         apagarGrupo(luces[zona])
+    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 def chapa(cerrar, xbee):
     if(cerrar):

@@ -12,7 +12,7 @@ def uploadDweet():
     time_d = time.time()
 
     while(True):
-        if(time.time()-time_d > 10):
+        if(time.time()-time_d > 20):
             print "Sending data"
             time_d = time.time()
             with con_dweet:
@@ -23,7 +23,10 @@ def uploadDweet():
                 for dweets in actuales:
                     thing = dweets[0]
                     data = cPickle.loads(str(dweets[1]))
-                    dweepy.dweet_for(thing, data)
+                    try:
+                        dweepy.dweet_for(thing, data)
+                    except:
+                        print "Error subiendo dweets"
                 c.execute('DELETE FROM dweets')
 
 
