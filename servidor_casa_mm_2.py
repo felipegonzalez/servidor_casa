@@ -44,6 +44,10 @@ myxbees = {
     '0013a20040bef862':'cocina_entrada'
     }
 
+#lugares_xbee = {}
+#lugares_xbee['escalera']
+
+lugares_xbees = {}
 
 #mapeo de xbee pins )para cajas sin arduino)
 xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo','dio-4':'cerrar','dio-0':'abrir'},
@@ -66,7 +70,7 @@ ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':500,'cuarto':600}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':800,'cuarto':600}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
     'cocina':3*60,'cuarto':5*60}
 
@@ -130,6 +134,7 @@ def monitorCasa():
         apagarGrupo(luces[key])
         estado_luces[key] = False
         print "Luces activas, apagadas " + key
+
     
 
 
@@ -173,6 +178,7 @@ def monitorCasa():
         print "Conexión xbee serial...OK"
     except:
         print "Error serial/xbee"
+    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
     tstamp = time.time()
 
@@ -313,7 +319,7 @@ def monitorCasa():
             movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.01*delta))  
 
 
-        if(time.time() - dweepy_time > 12):
+        if(time.time() - dweepy_time > 20):
             dweepy_time = time.time()
             print "registro dw 1"
             mov_send = {}
@@ -344,7 +350,7 @@ def monitorCasa():
             #    print "error dweepy 2"
            
         anterior = time.time()
-        if(time.time() - dweepy_time_2 > 15):
+        if(time.time() - dweepy_time_2 > 23):
             print "registro dw 2"
             dweepy_time_2 = time.time()
             temp_send = {}
@@ -535,13 +541,14 @@ def monitorCasa():
         #time_loop = time.time()
         
         if((time.time()-log_time) > 5):
-            print '---------------------'
+            
             print 'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))
             log_time = time.time()
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
+            print '---------------------'
             #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 
