@@ -113,6 +113,16 @@ class chapaAbrir(object):
             cur.execute(commandx)
         return 'Abrir chapa'
 
+class puertaZumbar(object):
+    exposed = True
+    @cherrypy.tools.accept(media='text/plain')
+    def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('puerta_zumbador','1')"
+            cur.execute(commandx)
+        return 'Zumbando 2s'
 class controlPausa(object):
      exposed = True
 
@@ -165,6 +175,11 @@ if __name__ == '__main__':
              'tools.staticdir.root': os.path.abspath(os.getcwd())
          },
          '/garage': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
+         '/zumbador': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
@@ -236,6 +251,7 @@ if __name__ == '__main__':
     webapp.unlock = chapaAbrir()
     webapp.lucescocina = lucesCocina()
     webapp.apagarcocina = apagarCocina()
+    webapp.zumbador = puertaZumbar()
 
     cherrypy.quickstart(webapp, '/', conf)
 

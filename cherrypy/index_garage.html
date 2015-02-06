@@ -15,6 +15,13 @@
             });
            e.preventDefault();
          });
+         $("#accion-zumbador").click(function(e) {
+           $.post("/zumbador", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
           $("#accion-alarma").click(function(e) {
            $.post("/alarma", {})
             .done(function(string) {
@@ -105,9 +112,17 @@
 <td  style="padding:6px" colspan="2">
      <button id="dormir-a" class="btn btn-default btn-lg">Dormir</button>     
 </td></tr>
-<tr>  <td style="padding:6px" colspan="2">
+<tr> 
+ <td style="padding:6px" colspan="1">
+     <button id="accion-zumbador" class="btn btn-primary btn-lg">Zumbador</button>     
+</td>
+
+ <td style="padding:6px" colspan="1">
      <button id="accion-garage" class="btn btn-primary btn-lg">Garage</button>     
-</td></tr> 
+</td>
+
+
+</tr> 
 
 <tr><td  style="padding:5px">
      <button id="accion-alarma" class="btn btn-danger btn-lg">Activar Alarma</button>  

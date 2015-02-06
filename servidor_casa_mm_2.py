@@ -178,8 +178,10 @@ def monitorCasa():
         print "Conexión xbee serial...OK"
     except:
         print "Error serial/xbee"
+    # luces cocina apagadas
     xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
-
+    # zumbador apagado
+    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x04')
     tstamp = time.time()
 
     anterior = time.time()
@@ -218,6 +220,7 @@ def monitorCasa():
                 print(lugar)
                 print(response)
                 print('--------')
+
             st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
             if('rf_data' in response.keys()):
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
@@ -257,6 +260,7 @@ def monitorCasa():
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
                                 tocar("doorbell.mp3")
+                                globales['chapa'] = False
                             else:
                                 tiempo_sonos=time.time() + 120
                                 globales['alarma_trip'] = True
@@ -273,7 +277,7 @@ def monitorCasa():
                     ## checar gas
                     if(sensor_i =='gaslpg'):
                         gas[lugar_i] = valor_i
-                        if(float(valor_i) > 400):
+                        if(float(valor_i) > 500):
                             globales['alarma_gas'] = True
                             lugar_gas = lugar_i
                             lectura = valor_i
@@ -468,6 +472,12 @@ def monitorCasa():
                 if(comando[0]=='luces_cocina' and comando[1]=='0'):
                     print "Apagar cocina"
                     xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+                if(comando[0]=='puerta_zumbador'):
+                    print "Zumbando"
+                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x05')
+                    tiempo_zumbador = time.time()
+                    time.sleep(3)
+                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x04')
 
                 if(comando[0]=='chapa' and comando[1]=='1'):
                     print "Cerrar chapa"
@@ -525,13 +535,14 @@ def monitorCasa():
 
         ## i el lugar le toca registro, actualizar base de datos
         if 'lugar' in locals() and 'ocurrencia' in locals():
-            if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
-                tiempos_registro[lugar] = time.time()
-                #try:
-                #print "Escribir mysql"
-                escribir_ocurrencia_mysql(ocurrencia, conrds)
-                #except:
-                #    print "Error escribir base completa"
+            if(lugar != 'cocina_entrada'):
+                if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
+                    tiempos_registro[lugar] = time.time()
+                    #try:
+                    #print "Escribir mysql"
+                    escribir_ocurrencia_mysql(ocurrencia, conrds)
+                    #except:
+                    #    print "Error escribir base completa"
      
         # datos estados en consola    
         #print 'tiempo loop', time.time()- tstamp
