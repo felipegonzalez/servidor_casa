@@ -70,12 +70,12 @@ ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':300,'estudiof':730,'vestidor':900,'cocina':800,'cuarto':600}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,'cocina':800,'cuarto':600}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
     'cocina':3*60,'cuarto':5*60}
 
 # los que tienen cero envían datos según pausas
-delay_registro = {'escalera':1, 'sala':1, 'tv':1, 'estudiof':1, 'puerta':10, 'vestidor':1, 'cocina':1,'cuarto':1}
+delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 'cocina':2,'cuarto':2}
 
 # inicializar
 estado_luces={}
@@ -186,10 +186,11 @@ def monitorCasa():
 
     anterior = time.time()
     #################### ciclo de monitoreo #########################
-
+    contar_mysql=0
     while True:
         #tstamp del ciclo
         #print tstamp - time.time()
+
         tstamp = time.time()
         dt = datetime.datetime.fromtimestamp(tstamp, tz=tzone)
          # apagar si no se ha detectado movimiento en un rato
@@ -215,7 +216,7 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
-            #print "***** " + lugar
+            print "***** " + lugar
             if(lugar=='cocina_entrada'):
                 print(lugar)
                 print(response)
@@ -413,8 +414,9 @@ def monitorCasa():
                 
                 globales['ac_encendido'] = True
         if(temperaturas['tv'] < 22 and globales['ac_encendido']):
-            xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             globales['ac_encendido'] = False
+            xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+            
 
       
            
@@ -539,11 +541,13 @@ def monitorCasa():
                 if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
                     tiempos_registro[lugar] = time.time()
                     #try:
-                    #print "Escribir mysql"
+                    
+                    contar_mysql = contar_mysql +1
                     escribir_ocurrencia_mysql(ocurrencia, conrds)
+                
                     #except:
                     #    print "Error escribir base completa"
-     
+            
         # datos estados en consola    
         #print 'tiempo loop', time.time()- tstamp
         nuevo_tiempo = time.time() - tstamp
@@ -552,14 +556,18 @@ def monitorCasa():
         #time_loop = time.time()
         
         if((time.time()-log_time) > 5):
-            
-            print 'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))
+        
+            print '\033[91m'+'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))+'\033[0m'
             log_time = time.time()
+            if(contar_mysql > 0):
+                print "escribir mysql "+str(contar_mysql)+" registros."
+                contar_mysql=0
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
-            print '---------------------'
+            print "Globales ", globales
+            print '---------------------------------------------------------------'
             #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 
