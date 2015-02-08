@@ -211,10 +211,10 @@ def monitorCasa():
             movimiento[lugar] = False
 
         ## leer xbee y procesar ############################
+
         response = xbee.wait_read_frame(timeout=0.15)
 
-        #if(len(response)>0):
-        #    print(response)
+
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
@@ -228,12 +228,10 @@ def monitorCasa():
             if('rf_data' in response.keys()):
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
             if('samples' in response.keys()):
-                ocurrencia = procesar_samples_unif(response, st) # datos de xbee sin arduino
-                #print ocurrencia
-                #print procesar_samples_unif(response, st)
-           
-            #if(lugar=='cuarto'):
-            #    print(ocurrencia)
+                ocurrencia = procesar_samples_unif(response, st) # datos de xbee sin arduino 
+
+        #######################################################   
+
             # niveles de luz y movimiento, puertas
             #print(ocurrencia)
             for item in ocurrencia:
@@ -288,9 +286,8 @@ def monitorCasa():
                             lectura = valor_i
 
 
-        ######### luces ########
+        ######### checar luces ########
 
-            #checar focos
 
         if(time.time()-check_lights_time > 15):
             print "Check lights"
@@ -399,11 +396,11 @@ def monitorCasa():
 
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
+        if(globales['activo'] and temperaturas['tv'] >= 22.5 and (not globales['ac_encendido'])):
             if(movimiento_st['estudiof'] > 0.01):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                 globales['ac_encendido'] = True
-        if(temperaturas['tv'] < 22 and globales['ac_encendido']):
+        if(temperaturas['tv'] < 21.7 and globales['ac_encendido']):
             globales['ac_encendido'] = False
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             
@@ -507,10 +504,13 @@ def monitorCasa():
                         if(time.time() - tiempo_encendido[key] > 10):
                             print "Encender luces"
                             tiempo_encendido[key] = time.time()
-                            encenderGrupo(luces[key])
                             estado_luces[key] = True
                             if(key=='cocina'):
                                 xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
+                            else:
+                                encenderGrupo(luces[key])
+                                
+                            
 
         ## actividades programadas
         if(dormir['cuarto'] and dt.hour==8):
