@@ -199,10 +199,12 @@ def monitorCasa():
         for key in tiempo_movimiento:
             if((tstamp - tiempo_movimiento[key] ) >= delay_luces_l[key]):
                 if(globales['activo'] and estado_luces[key]):
-                    apagarGrupo(luces[key])
+                    if(key=='cocina'):
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+                    else:
+                        apagarGrupo(luces[key])
                     estado_luces[key] = False
-                if(globales['activo'] and key=='cocina'):
-                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+                    
 
 
 
