@@ -30,7 +30,7 @@ tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
-lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto']
+lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto','entrada']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -69,13 +69,15 @@ ip_felipe = '192.168.100.6'
 ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'cocina':[10],'cuarto':[11]}
-nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,'cocina':800,'cuarto':600}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
+nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
+'cocina':800,'cuarto':600, 'entrada':700}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60}
 
 # los que tienen cero envían datos según pausas
-delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 'cocina':2,'cuarto':2}
+delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
+'cocina':2,'cuarto':2,'entrada':20}
 
 # inicializar
 estado_luces={}
@@ -100,7 +102,7 @@ puertas = {'puerta':1, 'estudiof':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'felipe':True, 'tere':False,
-    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False}
+    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
@@ -257,6 +259,8 @@ def monitorCasa():
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
                         puertas[lugar_i] = 0
+                        movimiento['entrada'] = True  
+
                         if(tstamp-tiempo_sonos > 15):
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
@@ -282,7 +286,7 @@ def monitorCasa():
                             globales['alarma_gas'] = True
                             lugar_gas = lugar_i
                             lectura = valor_i
-  
+
 
         ######### luces ########
 
@@ -303,19 +307,6 @@ def monitorCasa():
         
 
 
-        # encender luces donde haya movimiento, si están apagadas?
-        for key in movimiento:
-            if(movimiento[key]):
-                tiempo_movimiento[key] = time.time()
-                if(niveles_luz[key] < nivel_encendido[key]):
-                    if(globales['activo'] and (not dormir[key])):       
-                        if(time.time() - tiempo_encendido[key] > 10):
-                            print "Encender luces"
-                            tiempo_encendido[key] = time.time()
-                            encenderGrupo(luces[key])
-                            estado_luces[key] = True
-                            if(key=='cocina'):
-                                xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
 
         
         delta = time.time() - anterior
@@ -411,7 +402,6 @@ def monitorCasa():
         if(globales['activo'] and temperaturas['tv'] >= 23 and (not globales['ac_encendido'])):
             if(movimiento_st['estudiof'] > 0.01):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
-                
                 globales['ac_encendido'] = True
         if(temperaturas['tv'] < 22 and globales['ac_encendido']):
             globales['ac_encendido'] = False
@@ -441,6 +431,7 @@ def monitorCasa():
                         r = requests.post('http://192.168.100.19:8090/garage')
                     except:
                         print "Error: Garage no disponible"
+                    movimiento['entrada'] = True
                 if(comando[0]=='activar_alarma'):
                     if(comando[1]=='1'):
                         globales['alarma'] = True
@@ -480,6 +471,7 @@ def monitorCasa():
                     tiempo_zumbador = time.time()
                     time.sleep(3)
                     xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x04')
+                    movimiento['entrada'] = True
 
                 if(comando[0]=='chapa' and comando[1]=='1'):
                     print "Cerrar chapa"
@@ -499,7 +491,26 @@ def monitorCasa():
                     except:
                         print "Error activo escribir"
             c.execute('DELETE FROM pendientes')
-            
+        
+        # nivel de luz afuera
+        now_1 = datetime.datetime.now().time()
+        if(time_in_range(datetime.time(18, 0, 0),datetime.time(8, 0, 0), now_1)):
+            niveles_luz['entrada'] = 600
+        else:
+            niveles_luz['entrada'] = 900   
+        # encender luces donde haya movimiento, si están apagadas?
+        for key in movimiento:
+            if(movimiento[key]):
+                tiempo_movimiento[key] = time.time()
+                if(niveles_luz[key] < nivel_encendido[key]):
+                    if(globales['activo'] and (not dormir[key])):       
+                        if(time.time() - tiempo_encendido[key] > 10):
+                            print "Encender luces"
+                            tiempo_encendido[key] = time.time()
+                            encenderGrupo(luces[key])
+                            estado_luces[key] = True
+                            if(key=='cocina'):
+                                xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
 
         ## actividades programadas
         if(dormir['cuarto'] and dt.hour==8):
@@ -567,7 +578,8 @@ def monitorCasa():
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
             print "Globales ", globales
-            print '---------------------------------------------------------------'
+            print " "
+            print " "
             #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 
@@ -759,6 +771,12 @@ def decir(texto):
         #    print 'Resuming %s' % mediaURI
          #   zp.play_uri(mediaURI, mediaMeta)
 
+def time_in_range(start, end, x):
+    """Return true if x is in the range [start, end]"""
+    if start <= end:
+        return start <= x <= end
+    else:
+        return start <= x or x <= end
 
 # if run as top-level script
 if __name__ == "__main__":
