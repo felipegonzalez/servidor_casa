@@ -69,7 +69,7 @@ ip_felipe = '192.168.100.6'
 ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[11],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
 'cocina':800,'cuarto':600, 'entrada':700}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
