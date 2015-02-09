@@ -69,7 +69,7 @@ ip_felipe = '192.168.100.6'
 ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[2],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[11],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
 'cocina':800,'cuarto':600, 'entrada':700}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
@@ -112,7 +112,6 @@ SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
 #    user="felipe",passwd="valqui2312",db="dbmonitor")
 #con = lite.connect('test.db')
 con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
-concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
 conlocal = lite.connect('/Volumes/mmshared/bdatos/temp_monitor.db')
 conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 con_dweet= lite.connect('/Volumes/mmshared/bdatos/to_dweet.db')
@@ -141,11 +140,14 @@ def monitorCasa():
 
 
     #limpiar comandos pendientes
+    concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+
     with concom:
         c = concom.cursor()
         c.execute('DELETE FROM pendientes') 
-
+    concom.close()
     #iniciar conteos
+    tiempo_comandos= time.time()
     tiempo_sonos = time.time()
     time_loop = time.time() 
     log_time = time.time()
@@ -410,86 +412,107 @@ def monitorCasa():
       
            
         # procesar comandos pendientes
-        with concom:
-            c = concom.cursor()
-            c.execute('SELECT * FROM pendientes')
-            actuales = c.fetchall()
-            #print actuales
-            for comando in actuales:
-                #print comando
-                if(comando[0]=='aire_acondicionado'):
-                    print "Aire acondicionado"
-                    xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
-                    globales['ac_encendido'] = not globales['ac_encendido']
-                if(comando[0]=='apagar_luces'):
-                    apagarTodas(luces)
-                    print "Apagando luces"
-                if(comando[0]=='abrir_garage'):
-                    print "Abriendo garage"
-                    try:
-                        r = requests.post('http://192.168.100.19:8090/garage')
-                    except:
-                        print "Error: Garage no disponible"
-                    movimiento['entrada'] = True
-                if(comando[0]=='activar_alarma'):
-                    if(comando[1]=='1'):
-                        globales['alarma'] = True
-                        globales['alarma_enviada'] = False
-                        globales['alarma_trip'] = False
-                        tocar("alarma_activada.mp3")
-                        chapa(True, xbee = xbee)
-                        for key in luces:
-                            apagarGrupo(luces[key])
-                        globales['activo'] = False
-                    if(comando[1]=='0'):
-                        globales['alarma'] = False
-                        tocar("alarma_desactivada.mp3")
-                        chapa(False, xbee=xbee)
-                        globales['alarma_trip']= False
-                        globales['alarma_enviada'] = False
-                        globales['activo'] = True
-                        globales['alarma_gas'] = False
-                        globales['alarma_gas_enviada'] = False
-                if(comando[0]=='dormir'):
-                    dormir['cuarto'] = not dormir['cuarto']
-                    if(dormir['cuarto']):
-                        decir('Listo para dormir')
-                        apagarGrupo(luces['cuarto'])
-                        chapa(True, xbee = xbee)
-                    else:
-                        decir('Hora de despertar')
-                if(comando[0]=='luces_cocina' and comando[1]=='1'):
-                    print "Prender cocina"
-                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
-                if(comando[0]=='luces_cocina' and comando[1]=='0'):
-                    print "Apagar cocina"
-                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
-                if(comando[0]=='puerta_zumbador'):
-                    print "Zumbando"
-                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x05')
-                    tiempo_zumbador = time.time()
-                    time.sleep(3)
-                    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x04')
-                    movimiento['entrada'] = True
+        if(time.time() - tiempo_comandos > 1.0):
+            tiempo_comandos = time.time()
+            concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+            actuales = {}
+            with concom:
+                c = concom.cursor()
+                c.execute('SELECT * FROM pendientes')
+                actuales = c.fetchall()
+                #print actuales
+                c.executemany('DELETE FROM pendientes WHERE comando=? AND params=?',actuales)
+            concom.close()   
 
-                if(comando[0]=='chapa' and comando[1]=='1'):
-                    print "Cerrar chapa"
-                    chapa(True, xbee = xbee)
-                if(comando[0]=='chapa' and comando[1]=='0'):
-                    print "Abrir chapa"
-                    chapa(False, xbee = xbee)
-                if(comando[0]=='mantener_luces'):
-                    globales['activo'] = not globales['activo']
-                    try:
-                        with con2:
-                            cur2 = con2.cursor()
-                            command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                            command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                            cur2.execute(command1)
-                            cur2.execute(command2)
-                    except:
-                        print "Error activo escribir"
-            c.execute('DELETE FROM pendientes')
+                #print actuales
+            if(len(actuales)>0):
+                for comando in actuales:
+                    #print comando
+                    if(comando[0]=='aire_acondicionado'):
+                        print "Aire acondicionado"
+                        xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
+                        globales['ac_encendido'] = not globales['ac_encendido']
+                    if(comando[0]=='apagar_luces'):
+                        apagarTodas(luces)
+                        print "Apagando luces"
+                    if(comando[0]=='abrir_garage'):
+                        print "Abriendo garage"
+                        try:
+                            r = requests.post('http://192.168.100.19:8090/garage')
+                        except:
+                            print "Error: Garage no disponible"
+                        movimiento['entrada'] = True
+                    if(comando[0]=='activar_alarma'):
+                        if(comando[1]=='1'):
+                            globales['alarma'] = True
+                            globales['alarma_enviada'] = False
+                            globales['alarma_trip'] = False
+                            tocar("alarma_activada.mp3")
+                            chapa(True, xbee = xbee)
+                            for key in luces:
+                                apagarGrupo(luces[key])
+                            globales['activo'] = False
+                        if(comando[1]=='0'):
+                            globales['alarma'] = False
+                            tocar("alarma_desactivada.mp3")
+                            chapa(False, xbee=xbee)
+                            globales['alarma_trip']= False
+                            globales['alarma_enviada'] = False
+                            globales['activo'] = True
+                            globales['alarma_gas'] = False
+                            globales['alarma_gas_enviada'] = False
+                    ##### wit.ai
+                    if(comando[0]=='decir'):
+                        print "^^^^^^^^ decir"+comando[1]
+                        texto = comando[1]
+                        try:
+                            decir2(texto)
+                        except:
+                            print "Error sonos ---------------------------"
+                    if(comando[0]=='get_temperature'):
+                        temps = temperaturas['sala']
+                        decir2('La temperatura en la sala es de '+str(round(temps))+' grados')
+                    #####
+                    if(comando[0]=='dormir'):
+                        dormir['cuarto'] = not dormir['cuarto']
+                        if(dormir['cuarto']):
+                            decir('Listo para dormir')
+                            apagarGrupo(luces['cuarto'])
+                            chapa(True, xbee = xbee)
+                        else:
+                            decir('Hora de despertar')
+                    if(comando[0]=='luces_cocina' and comando[1]=='1'):
+                        print "Prender cocina"
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
+                    if(comando[0]=='luces_cocina' and comando[1]=='0'):
+                        print "Apagar cocina"
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+                    if(comando[0]=='puerta_zumbador'):
+                        print "Zumbando"
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x05')
+                        tiempo_zumbador = time.time()
+                        time.sleep(3)
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x04')
+                        movimiento['entrada'] = True
+
+                    if(comando[0]=='chapa' and comando[1]=='1'):
+                        print "Cerrar chapa"
+                        chapa(True, xbee = xbee)
+                    if(comando[0]=='chapa' and comando[1]=='0'):
+                        print "Abrir chapa"
+                        chapa(False, xbee = xbee)
+                    if(comando[0]=='mantener_luces'):
+                        globales['activo'] = not globales['activo']
+                        try:
+                            with con2:
+                                cur2 = con2.cursor()
+                                command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                                command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                                cur2.execute(command1)
+                                cur2.execute(command2)
+                        except:
+                            print "Error activo escribir"
+               
         
         # nivel de luz afuera
         now_1 = datetime.datetime.now().time()
@@ -577,6 +600,7 @@ def monitorCasa():
                 contar_mysql=0
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
+            #decir('La temperatura es '+str(round(temperaturas['sala']))+' grados')
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
             print "Globales ", globales
@@ -758,6 +782,34 @@ def decir(texto):
 
 
     ok, file_name =  text2mp3(texto, PATH, LANGUAGE, ALERT)
+    if ok:
+        zp = SoCo(ip_sonos)
+        print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
+        zp.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
+        #alertDuration = zp.get_current_track_info()['duration']
+        #sleepTime=float(alertDuration)
+        #time.sleep(sleepTime)
+        #if len(zp.get_queue()) > 0 and playlistPos > 0:
+        #    print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
+        #    zp.play_from_queue(playlistPos)
+        #    zp.seek(trackPos)
+        #else:
+        #    print 'Resuming %s' % mediaURI
+         #   zp.play_uri(mediaURI, mediaMeta)
+
+
+def decir2(texto):
+    track = sonos.get_current_track_info()
+    playlistPos = int(track['playlist_position'])-1
+    trackPos = track['position']
+    trackURI = track['uri']
+
+    # This information allows us to resume services like Pandora
+    mediaInfo = sonos.avTransport.GetMediaInfo([('InstanceID', 0)])
+    mediaURI = mediaInfo['CurrentURI']
+    mediaMeta = mediaInfo['CurrentURIMetaData']
+
+    ok, file_name =  text2mp3(texto, PATH, LANGUAGE, False)
     if ok:
         zp = SoCo(ip_sonos)
         print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
