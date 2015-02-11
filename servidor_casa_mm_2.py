@@ -30,7 +30,7 @@ tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
-lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto','entrada']
+lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto','entrada','estudiot']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -41,7 +41,8 @@ myxbees = {
     '0013a20040bf962c':'vestidor',
     '0013a20040bf06bd':'cocina',
     '0013a20040c45639':'cuarto',
-    '0013a20040bef862':'cocina_entrada'
+    '0013a20040bef862':'cocina_entrada',
+    '0013a20040be4592':'estudiot'
     }
 
 #lugares_xbee = {}
@@ -69,15 +70,15 @@ ip_felipe = '192.168.100.6'
 ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11]}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],'estudiot':[13]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
-'cocina':800,'cuarto':600, 'entrada':700}
+'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
-'cocina':2,'cuarto':2,'entrada':20}
+'cocina':2,'cuarto':2,'entrada':20,'estudiot':2}
 
 # inicializar
 estado_luces={}
@@ -96,9 +97,9 @@ for lugar in lugares:
 anterior = time.time()
 
 
-temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0}
+temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0,'estudiot':0.0}
 gas = {'cocina':0.0, 'cuarto':0.0}
-puertas = {'puerta':1, 'estudiof':1}
+puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'felipe':True, 'tere':False,
@@ -261,13 +262,14 @@ def monitorCasa():
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
                         puertas[lugar_i] = 0
-                        movimiento['entrada'] = True  
+                        if(lugar_i=='puerta'):
+                            movimiento['entrada'] = True  
+                            globales['chapa'] = False
 
                         if(tstamp-tiempo_sonos > 15):
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
                                 tocar("doorbell.mp3")
-                                globales['chapa'] = False
                             else:
                                 tiempo_sonos=time.time() + 120
                                 globales['alarma_trip'] = True
@@ -378,6 +380,7 @@ def monitorCasa():
         ## alertar por mensaje si alarma
         if(globales['alarma_trip'] and not(globales['alarma_enviada'])):
             encenderGrupo(luces['puerta'])
+            encenderGrupo(luces['estudiof'])
             try:
                 po_client.send_message("Alarma disparada", title="Alarma entrada")
                 globales['alarma_enviada'] = True
