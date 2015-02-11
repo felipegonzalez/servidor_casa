@@ -238,7 +238,8 @@ def monitorCasa():
         #######################################################   
 
             # niveles de luz y movimiento, puertas
-            #print(ocurrencia)
+            if(lugar=='sala'):
+                print(ocurrencia)
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
                     sensor_i = item[3]
