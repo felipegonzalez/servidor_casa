@@ -98,6 +98,7 @@ anterior = time.time()
 
 
 temperaturas = {'sala':0.0, 'tv':0.0,  'estudiof':0.0,'cocina':0.0,'cuarto':0.0,'estudiot':0.0}
+humedades ={'sala':0.0, 'cocina':0.0}
 gas = {'cocina':0.0, 'cuarto':0.0}
 puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
@@ -284,6 +285,12 @@ def monitorCasa():
                             temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
                         else:
                             temperaturas[lugar_i] = float(item[6])
+                    ## humedad
+                    if(sensor_i=='humidity'):
+                        try:
+                            humedades[lugar_i] = float(valor_i)
+                        except:
+                            print "Error humedad"
                     ## checar gas
                     if(sensor_i =='gaslpg'):
                         gas[lugar_i] = valor_i
@@ -356,8 +363,11 @@ def monitorCasa():
             temp_send = {}
             for key in temperaturas:
                 temp_send[key] = str(round(temperaturas[key], 2))
+            for key in humedades:
+                temp_send[key] = str(round(humedades[key], 2))
             try:
                 #dweepy.dweet_for('zany-stomach',temp_send)
+                save_dweet('verdant-credit', humid_send)
                 save_dweet('zany-stomach',temp_send)
             except:
                 print "Error dweepy zany 3"
