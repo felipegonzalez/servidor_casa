@@ -224,11 +224,11 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
-            print "***** " + lugar
-            if(lugar=='cocina_entrada'):
-                print(lugar)
-                print(response)
-                print('--------')
+            #print "***** " + lugar
+            #if(lugar=='cocina_entrada'):
+            #    print(lugar)
+            #    print(response)
+            #    print('--------')
 
             st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
             if('rf_data' in response.keys()):
@@ -239,8 +239,8 @@ def monitorCasa():
         #######################################################   
 
             # niveles de luz y movimiento, puertas
-            if(lugar=='sala'):
-                print(ocurrencia)
+            #if(lugar=='sala'):
+            #    print(ocurrencia)
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
                     sensor_i = item[3]
@@ -257,10 +257,10 @@ def monitorCasa():
                         mov = movimiento[lugar_i]
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
                     if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
-                        print 'sonido_env: '+valor_i
+                        #print 'sonido_env: '+valor_i
                         if(float(valor_i) > 10):
                             movimiento[lugar_i] = True
-                            print "Sonido"
+                            #print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
                         puertas[lugar_i] = 0
@@ -304,7 +304,7 @@ def monitorCasa():
 
 
         if(time.time()-check_lights_time > 15):
-            print "Check lights"
+            #print "Check lights"
             try:
                 check_lights_time = time.time()
                 r_state = requests.get(ip_hue+'lights/', timeout=0.05)
@@ -328,11 +328,11 @@ def monitorCasa():
 
         if(time.time() - dweepy_time > 20):
             dweepy_time = time.time()
-            print "registro dw 1"
+            #print "registro dw 1"
             mov_send = {}
             for lugar in lugares:
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
-            print mov_send
+            #print mov_send
             try:
                 #dweepy.dweet_for('well-groomed-move',mov_send)
                 save_dweet('well-groomed-move',mov_send)
@@ -358,7 +358,7 @@ def monitorCasa():
            
         anterior = time.time()
         if(time.time() - dweepy_time_2 > 23):
-            print "registro dw 2"
+            #print "registro dw 2"
             dweepy_time_2 = time.time()
             temp_send = {}
             humid_send = {}
@@ -449,7 +449,7 @@ def monitorCasa():
                         globales['ac_encendido'] = not globales['ac_encendido']
                     if(comando[0]=='apagar_luces'):
                         apagarTodas(luces)
-                        print "Apagando luces"
+                        #print "Apagando luces"
                     if(comando[0]=='abrir_garage'):
                         print "Abriendo garage"
                         try:
@@ -497,10 +497,10 @@ def monitorCasa():
                         else:
                             decir('Hora de despertar')
                     if(comando[0]=='luces_cocina' and comando[1]=='1'):
-                        print "Prender cocina"
+                        #print "Prender cocina"
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
                     if(comando[0]=='luces_cocina' and comando[1]=='0'):
-                        print "Apagar cocina"
+                        #print "Apagar cocina"
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     if(comando[0]=='puerta_zumbador'):
                         print "Zumbando"
@@ -542,7 +542,7 @@ def monitorCasa():
                 if(niveles_luz[key] < nivel_encendido[key]):
                     if(globales['activo'] and (not dormir[key])):       
                         if(time.time() - tiempo_encendido[key] > 10):
-                            print "Encender luces"
+                            #print "Encender luces"
                             tiempo_encendido[key] = time.time()
                             estado_luces[key] = True
                             if(key=='cocina'):
