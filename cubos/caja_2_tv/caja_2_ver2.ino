@@ -55,15 +55,15 @@ void loop() {
   if(pirread1 > 0){
   	if(tiempo_actual >= tiempo_pir_1 + 2000){
       		tiempo_pir_1 = millis();
-      		tiempo_ultima = millis();
-      		registro_enviar();
+      		//tiempo_ultima = millis();
+      		registro_enviar_pir();
     	}
   }
   if(pirread2 > 0){
   	if(tiempo_actual >= tiempo_pir_2 + 2000){
       		tiempo_pir_2 = millis();
-      		tiempo_ultima = millis();
-      		registro_enviar();
+      		//tiempo_ultima = millis();
+      		registro_enviar_pir();
     	}
   }
 
@@ -111,5 +111,21 @@ void registro_enviar(){
   {
     Serial.println("Sensor error");
   }
+
+}
+
+
+void registro_enviar_pir(){
+  int photoread = analogRead(photo_pin);  
+  int pirread1 = digitalRead(pir_pin1);
+  int pirread2 = digitalRead(pir_pin2);
+  
+  Serial.print("photo,analog,1,");
+  Serial.println(photoread);
+  Serial.print("pir,binary,1,");
+  Serial.println(pirread1);
+  Serial.print("pir,binary,2,");
+  Serial.println(pirread2);
+ 
 
 }
