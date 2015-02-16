@@ -606,7 +606,7 @@ def monitorCasa():
         ant = tiempos.popleft()
         #time_loop = time.time()
         
-        if((time.time()-log_time) > 5):
+        if((time.time()-log_time) > 10):
         
             print '\033[91m'+'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))+'\033[0m'
             log_time = time.time()
