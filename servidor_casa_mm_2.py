@@ -361,10 +361,11 @@ def monitorCasa():
             print "registro dw 2"
             dweepy_time_2 = time.time()
             temp_send = {}
+            humid_send = {}
             for key in temperaturas:
                 temp_send[key] = str(round(temperaturas[key], 2))
             for key in humedades:
-                temp_send[key] = str(round(humedades[key], 2))
+                humid_send[key] = str(round(humedades[key], 2))
             try:
                 #dweepy.dweet_for('zany-stomach',temp_send)
                 save_dweet('verdant-credit', humid_send)
@@ -614,6 +615,7 @@ def monitorCasa():
                 contar_mysql=0
             print "Luz, ", niveles_luz
             print "Temperatura, ", temperaturas
+            print "Humedad", humedades
             #decir('La temperatura es '+str(round(temperaturas['sala']))+' grados')
             print "Movimiento, ", movimiento
             print "Mov st ", movimiento_st
