@@ -167,9 +167,9 @@ class apagarLuces(object):
             cur.execute(commandx)
         return 'Apagando luces' 
 
-class estadoSys(object):
-    exposed = True
-    @cherrypy.tools.accept(media='text/plain')
+#class estadoSys(object):
+#    exposed = True
+#    @cherrypy.tools.accept(media='text/plain')
 
 if __name__ == '__main__':
     cherrypy.config.update({'server.socket_port':8090})
