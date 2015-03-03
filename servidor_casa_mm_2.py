@@ -239,8 +239,8 @@ def monitorCasa():
         #######################################################   
 
             # niveles de luz y movimiento, puertas
-            #if(lugar=='sala'):
-            #    print(ocurrencia)
+            if(lugar=='vestidor'):
+                print(ocurrencia)
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
                     sensor_i = item[3]
@@ -415,11 +415,11 @@ def monitorCasa():
 
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(globales['activo'] and temperaturas['tv'] >= 22.5 and (not globales['ac_encendido'])):
+        if(globales['activo'] and temperaturas['tv'] >= 24 and (not globales['ac_encendido'])):
             if(movimiento_st['estudiof'] > 0.01):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                 globales['ac_encendido'] = True
-        if(temperaturas['tv'] < 21.7 and globales['ac_encendido']):
+        if(temperaturas['tv'] < 22.5 and globales['ac_encendido']):
             globales['ac_encendido'] = False
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             
@@ -518,15 +518,15 @@ def monitorCasa():
                         chapa(False, xbee = xbee)
                     if(comando[0]=='mantener_luces'):
                         globales['activo'] = not globales['activo']
-                        try:
-                            with con2:
-                                cur2 = con2.cursor()
-                                command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                                command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                                cur2.execute(command1)
-                                cur2.execute(command2)
-                        except:
-                            print "Error activo escribir"
+                        #try:
+                           #with con2:
+                           #     cur2 = con2.cursor()
+                           #     command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                           #     command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                           #     cur2.execute(command1)
+                           #     cur2.execute(command2)
+                        #except:
+                        #    print "Error activo escribir"
                
         
         # nivel de luz afuera
@@ -560,17 +560,19 @@ def monitorCasa():
 
         ## pings
         if(time.time() - felipe_phone_time > 10):
-            felipe_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.6' + ' > /dev/null', shell=True)
-            tere_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.7' + ' > /dev/null', shell=True)
-            felipe_phone_time = time.time()
-            if(felipe_iphone==0):
-                globales['felipe'] = True
-            else:
-                globales['felipe'] = False
-            if(tere_iphone==0):
-                globales['tere'] = True
-            else:
-                globales['tere'] = False
+            pass
+            #felipe_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.6' + ' > /dev/null', shell=True)
+            #tere_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.7' + ' > /dev/null', shell=True)
+            #felipe_phone_time = time.time()
+
+            #if(felipe_iphone==0):
+            #    globales['felipe'] = True
+            #else:
+            #    globales['felipe'] = False
+            #if(tere_iphone==0):
+            #    globales['tere'] = True
+            #else:
+            #    globales['tere'] = False
 
 
         ### registrar sensores
@@ -594,7 +596,7 @@ def monitorCasa():
                     #try:
                     
                     contar_mysql = contar_mysql +1
-                    escribir_ocurrencia_mysql(ocurrencia, conrds)
+                    #escribir_ocurrencia_mysql(ocurrencia, conrds)
                 
                     #except:
                     #    print "Error escribir base completa"
