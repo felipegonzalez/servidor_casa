@@ -282,7 +282,10 @@ def monitorCasa():
                     if(sensor_i=='temperature'):
                         if(temperaturas[lugar_i] > 0):
                             #promediar temps porque algunas cajas tienen 2 sensores
-                            temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
+                            try:
+                                temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
+                            except:
+                                temperaturas[lugar_i] = -30.0
                         else:
                             temperaturas[lugar_i] = float(item[6])
                     ## humedad
@@ -714,7 +717,7 @@ def encenderGrupo(grupo):
 def apagarTodas(luces):
     for zona in luces:
         apagarGrupo(luces[zona])
-    xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+    #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 def chapa(cerrar, xbee):
     if(cerrar):
@@ -737,7 +740,10 @@ def update_ultimas(item, con2, ts):
             cur2 = con2.cursor()
             valbase = item[6]
             if(isinstance(item[6], bool)):
-                valbase = float(item[6])
+                try:
+                    valbase = float(item[6])
+                except:
+                    valbase = -20.0
             command1 = "UPDATE status SET valor ="+str(valbase)+" WHERE lugar='"+item[2]+"' AND medicion= '"+item[3]+"' AND no_sensor="+str(item[5])
             command2 = "UPDATE status SET timestamp ='" +ts+"' WHERE lugar='"+item[2]+"' AND medicion= '"+item[3]+"' AND no_sensor="+str(item[5])
 
