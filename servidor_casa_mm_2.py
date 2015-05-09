@@ -30,7 +30,8 @@ tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
-lugares = ['escalera','sala','tv','puerta','estudiof','vestidor','cocina','cuarto','entrada','estudiot']
+lugares = ['escalera','sala','tv','puerta','estudiof','vestidor',
+'cocina','cuarto','entrada','estudiot','bano_cuarto']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -42,7 +43,8 @@ myxbees = {
     '0013a20040bf06bd':'cocina',
     '0013a20040c45639':'cuarto',
     '0013a20040bef862':'cocina_entrada',
-    '0013a20040be4592':'estudiot'
+    '0013a20040be4592':'estudiot',
+    '0013a20040c2833b':'bano_cuarto'
     }
 
 #lugares_xbee = {}
@@ -52,7 +54,7 @@ lugares_xbees = {}
 
 #mapeo de xbee pins )para cajas sin arduino)
 xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo','dio-4':'cerrar','dio-0':'abrir'},
-        'escalera':{'dio-4':'pir'}}
+        'escalera':{'dio-4':'pir'},'bano_cuarto':{'dio-1':'pir'}}
 
 ip_hue ="http://192.168.100.2/api/newdeveloper/"
 payoff = json.dumps({"on":False})
@@ -70,15 +72,17 @@ ip_felipe = '192.168.100.6'
 ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],'estudiot':[13]}
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],
+'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],
+'estudiot':[13],'bano_cuarto':[14,15]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
-'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700}
+'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
-'cocina':2,'cuarto':2,'entrada':20,'estudiot':2}
+'cocina':2,'cuarto':2,'entrada':20,'estudiot':2,'bano_cuarto':2}
 
 # inicializar
 estado_luces={}
