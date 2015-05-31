@@ -31,7 +31,7 @@ tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
 lugares = ['escalera','sala','tv','puerta','estudiof','vestidor',
-'cocina','cuarto','entrada','estudiot','bano_cuarto']
+'cocina','cuarto','entrada','estudiot','bano_cuarto','bano_escalera']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -44,7 +44,8 @@ myxbees = {
     '0013a20040c45639':'cuarto',
     '0013a20040bef862':'cocina_entrada',
     '0013a20040be4592':'estudiot',
-    '0013a20040c2833b':'bano_cuarto'
+    '0013a20040c2833b':'bano_cuarto',
+    '0013a20040caaddc':'bano_escalera'
     }
 
 #lugares_xbee = {}
@@ -54,35 +55,37 @@ lugares_xbees = {}
 
 #mapeo de xbee pins )para cajas sin arduino)
 xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo','dio-4':'cerrar','dio-0':'abrir'},
-        'escalera':{'dio-4':'pir'},'bano_cuarto':{'dio-1':'pir'}}
+        'escalera':{'dio-4':'pir'},'bano_cuarto':{'dio-1':'pir'},'bano_escalera':{'dio-1':'pir'}}
 
 ip_hue ="http://192.168.100.2/api/newdeveloper/"
 payoff = json.dumps({"on":False})
 payon = json.dumps({"on":True, "bri":255})
 
-ip_sonos = "192.168.100.13" ## ip de bocina play 1 (puede cambiar) TODO
+ip_sonos = "192.168.100.7" ## ip de bocina play 1 (puede cambiar) TODO
 PATH ='/Volumes/mmshared/sonidos'
 path_s ='//homeserver/mmshared/sonidos/'
 ALERT = 'alert4.mp3' 
 LANGUAGE = 'es' # speech language
 texto_1 = "Iniciando sistema"
+
+
 sonos = SoCo(ip_sonos)
 
-ip_felipe = '192.168.100.6'
-ip_tere = '192.168.100.7'
+#ip_felipe = '192.168.100.6'
+#ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7],
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7,17],
 'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],
-'estudiot':[13],'bano_cuarto':[14,15]}
+'estudiot':[13],'bano_cuarto':[14,15],'bano_escalera':[16]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
-'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500}
+'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500,'bano_escalera':2000}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':3*60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
-'cocina':2,'cuarto':2,'entrada':20,'estudiot':2,'bano_cuarto':2}
+'cocina':2,'cuarto':2,'entrada':20,'estudiot':2,'bano_cuarto':2,'bano_escalera':2}
 
 # inicializar
 estado_luces={}
@@ -97,7 +100,7 @@ for lugar in lugares:
     niveles_luz[lugar] = 1000
     tiempo_movimiento[lugar] = 0
     dormir[lugar] = False
-
+niveles_luz['bano_escalera'] = 0
 anterior = time.time()
 
 
@@ -107,7 +110,7 @@ gas = {'cocina':0.0, 'cuarto':0.0}
 puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False, 'felipe':True, 'tere':False,
+    'ac_encendido':False, 'felipe':False, 'tere':False,
     'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
@@ -117,14 +120,18 @@ SERIAL_PORT = '/dev/tty.usbserial-AH02VCE9'
 #conrds = MySQLdb.connect(host="fgdbinstances.cqgwstytvlnn.us-east-1.rds.amazonaws.com", port =3306,
 #    user="felipe",passwd="valqui2312",db="dbmonitor")
 #con = lite.connect('test.db')
+print("Preparar bases de datos....")
 con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
 conlocal = lite.connect('/Volumes/mmshared/bdatos/temp_monitor.db')
 conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 con_dweet= lite.connect('/Volumes/mmshared/bdatos/to_dweet.db')
 
 def monitorCasa():
+    print("Iniciando....")
     #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
+    print("conectando pushbullet")
     po_client = Client("upTSkha71ovvG3Q3KSp68VAZRUwx4h", api_token="aeWBgVcie7cwVm2UrWFsTUa52XdezD")
+
     #po_client_tere = Client("uF7p3ueWbwbhD9c8xer4QLukbWoppT", api_token="")
 
     #resetear alarma
@@ -134,9 +141,10 @@ def monitorCasa():
 
     globales['activo'] = True
    
+    print("Probando sonos...")
     tocar('iniciar.mp3')
 
-    
+    print("Apagando luces...")
     for key in luces:
         apagarGrupo(luces[key])
         estado_luces[key] = False
@@ -146,6 +154,7 @@ def monitorCasa():
 
 
     #limpiar comandos pendientes
+    print("Conectando con bd de comandos...")
     concom = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
 
     with concom:
@@ -182,6 +191,7 @@ def monitorCasa():
 
 
     # xbees iniciar conección
+    print("Activar xbee coordinator...")
     try:
         serialConnection = serial.Serial( SERIAL_PORT, 9600,timeout=0.15)
         xbee = ZigBee(serialConnection)
@@ -196,6 +206,7 @@ def monitorCasa():
 
     anterior = time.time()
     #################### ciclo de monitoreo #########################
+    print ("Iniciar ciclo principal...")
     contar_mysql=0
     while True:
         #tstamp del ciclo
@@ -228,7 +239,9 @@ def monitorCasa():
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
             lugar = myxbees[source]
-            #print "***** " + lugar
+            if(lugar=='bano_escalera'):
+                print "***** " + lugar
+                print(response)
             #if(lugar=='cocina_entrada'):
             #    print(lugar)
             #    print(response)
@@ -243,7 +256,7 @@ def monitorCasa():
         #######################################################   
 
             # niveles de luz y movimiento, puertas
-            if(lugar=='vestidor'):
+            if(lugar=='bano_cuarto'):
                 print(ocurrencia)
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
@@ -254,6 +267,9 @@ def monitorCasa():
                     if(sensor_i == 'photo'):
                         try:
                             niveles_luz[lugar_i] = float(valor_i)
+                            #poner nivel de cuarto a baño de cuarto
+                            if(lugar_i=='cuarto'):
+                                niveles_luz['bano_cuarto'] = float(valor_i) 
                         except:
                             print "Error float luz"
                     # actualizar movimiento
