@@ -1,12 +1,15 @@
 #define pin_pir 12
 #define pin_photo 1
 #define pin_irled 13
+#define pin_ac 0
 
 int motion;
 int photo;
 long tiempo_actual;
 long tiempo_ultima;
 long tiempo_pir;
+int no_samples = 100;
+int samples[100];
 
 void setup()  {                
   pinMode(pin_irled, OUTPUT);
@@ -197,4 +200,19 @@ void SendOnCode() {
   Serial.println(1-motion);
   Serial.print("photo,analog,1,");
   Serial.println(photo);
+  float suma = 0;
+  for(int i = 0; i < no_samples; i++) {
+      int val = analogRead(pin_ac);
+      samples[i] = val;
+      suma = suma + val;
+      delay(2);
+    }
+  float media = suma/no_samples;
+  float suma_cuad = 0;
+  for(int i =0; i < no_samples; i++){
+      suma_cuad = suma_cuad + (samples[i] - media)*(samples[i] -  media);
+  }
+  float rms = sqrt(suma_cuad/no_samples);
+  Serial.print("ac_current,rms,1,");
+  Serial.println(rms);
 }
