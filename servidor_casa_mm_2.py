@@ -442,7 +442,7 @@ def monitorCasa():
             if(movimiento_st['estudiof'] > 0.01):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                 globales['ac_encendido'] = True
-        if(temperaturas['tv'] < 22.5 and globales['ac_encendido']):
+        if(temperaturas['tv'] < 21.2 and globales['ac_encendido']):
             globales['ac_encendido'] = False
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             
@@ -539,15 +539,16 @@ def monitorCasa():
                     if(comando[0]=='chapa' and comando[1]=='0'):
                         print "Abrir chapa"
                         chapa(False, xbee = xbee)
+
                     if(comando[0]=='mantener_luces'):
                         globales['activo'] = not globales['activo']
                         #try:
-                           #with con2:
-                           #     cur2 = con2.cursor()
-                           #     command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                           #     command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
-                           #     cur2.execute(command1)
-                           #     cur2.execute(command2)
+                        #   with con2:
+                        #        cur2 = con2.cursor()
+                        #        command1 = "UPDATE status SET valor ="+int(activo)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                        #        command2 = "UPDATE status SET timestamp ="+str(st)+" WHERE lugar='global' AND medicion= 'activo' AND no_sensor=1"
+                        #        cur2.execute(command1)
+                        #        cur2.execute(command2)
                         #except:
                         #    print "Error activo escribir"
                
@@ -599,16 +600,16 @@ def monitorCasa():
 
 
         ### registrar sensores
-        #try:
-        #if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
-        #    mom_registrar[lugar] = time.time()
-        #    #print ocurrencia
-        #    if 'ocurrencia' in locals():
-        #        for item in ocurrencia:
-        #            #print(item)
-        #            update_ultimas(item, con2, str(st))
-        #except:
-        #    print("error registro ultimas")
+        try:
+            if(time.time()-mom_registrar[lugar] > delay_registro[lugar]):
+                mom_registrar[lugar] = time.time()
+                #print ocurrencia
+                if 'ocurrencia' in locals():
+                    for item in ocurrencia:
+                        #print(item)
+                        update_ultimas(item, con2, str(st))
+        except:
+            print("error registro ultimas")
 
 
         ## i el lugar le toca registro, actualizar base de datos
@@ -751,7 +752,14 @@ def chapa(cerrar, xbee):
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x04')
         globales['chapa'] = False
 
+def actualizar_global(item,valor, con2):
+    try:
+        with con2:
+            cur2 = con2.cursor()
+            command1 = "UPDATE status SET valor ="+int(valor)+" WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
 
+    except:
+        print "Error sqlite globales ultimas"
 
 
 def update_ultimas(item, con2, ts):
