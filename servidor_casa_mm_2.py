@@ -322,9 +322,12 @@ def monitorCasa():
                             try:
                                 temperaturas[lugar_i] = (float(item[6]) + temperaturas[lugar_i])/2 
                             except:
-                                temperaturas[lugar_i] = -30.0
+                                temperaturas[lugar_i] = -99.99
                         else:
-                            temperaturas[lugar_i] = float(item[6])
+                            try:
+                                temperaturas[lugar_i] = float(item[6])
+                            except:
+                                temperaturas[lugar_i] = -99.99
                     ## humedad
                     if(sensor_i=='humidity'):
                         try:
@@ -353,7 +356,7 @@ def monitorCasa():
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
                 print estado_hue
             except:
-                print "error getting light states"
+                logging.error('Error getting light states')
 
         
 
@@ -676,7 +679,7 @@ def monitorCasa():
             
 ##############################################################################
 def save_dweet(thing, obj):
-    print "Saving dweets"
+    #print "Saving dweets"
     
     with con_dweet:
         curr_d = con_dweet.cursor()
