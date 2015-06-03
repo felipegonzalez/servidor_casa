@@ -19,15 +19,17 @@ def uploadDweet():
                 c = con_dweet.cursor()
                 c.execute('SELECT * FROM dweets')
                 actuales = c.fetchall()
-                
+                file = open('/Volumes/mmshared/bdatos/log/dweets_'+time.strftime("%d-%m-%Y")+'.dat', 'a+')
                 for dweets in actuales:
                     thing = dweets[0]
                     data = cPickle.loads(str(dweets[1]))
                     try:
+                        file.write(time.strftime("%d-%m-%Y %H:%M:%S")+','+thing+','+json.dumps(data)+'\n')
                         dweepy.dweet_for(thing, data)
                     except:
                         print "Error subiendo dweets"
                 c.execute('DELETE FROM dweets')
+                file.close()
 
 
 if __name__ == "__main__":

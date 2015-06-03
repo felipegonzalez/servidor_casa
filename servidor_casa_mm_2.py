@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import logging
+import logging.handlers
 from xbee import ZigBee
 from pushover import Client
 #from pushbullet import PushBullet
@@ -25,6 +26,20 @@ import dweepy
 import MySQLdb 
 import cPickle
 from collections import deque
+
+##logging
+format_logging = logging.Formatter(fmt='%(levelname)s:%(asctime)s:%(name)s: %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
+h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/casa_monitor.log', encoding='utf8',
+        interval=1, when='D', backupCount=1)
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+h.setFormatter(format_logging)
+h.setLevel(logging.DEBUG)
+root_logger.addHandler(h)
+### end loggig handler
+print('Creado logging')
+logging.info('Comienza logging')
+
 
 tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 
@@ -61,7 +76,7 @@ ip_hue ="http://192.168.100.2/api/newdeveloper/"
 payoff = json.dumps({"on":False})
 payon = json.dumps({"on":True, "bri":255})
 
-ip_sonos = "192.168.100.7" ## ip de bocina play 1 (puede cambiar) TODO
+ip_sonos = "192.168.100.13" ## ip de bocina play 1 (puede cambiar) TODO
 PATH ='/Volumes/mmshared/sonidos'
 path_s ='//homeserver/mmshared/sonidos/'
 ALERT = 'alert4.mp3' 
@@ -128,6 +143,7 @@ con_dweet= lite.connect('/Volumes/mmshared/bdatos/to_dweet.db')
 
 def monitorCasa():
     print("Iniciando....")
+    logging.info('Starting')
     #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
     print("conectando pushbullet")
     po_client = Client("upTSkha71ovvG3Q3KSp68VAZRUwx4h", api_token="aeWBgVcie7cwVm2UrWFsTUa52XdezD")
@@ -197,6 +213,7 @@ def monitorCasa():
         xbee = ZigBee(serialConnection)
         print "Conexión xbee serial...OK"
     except:
+        logging.warning('Error serial/xbee')
         print "Error serial/xbee"
     # luces cocina apagadas
     xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
@@ -254,7 +271,7 @@ def monitorCasa():
                 ocurrencia = procesar_samples_unif(response, st) # datos de xbee sin arduino 
 
         #######################################################   
-
+            logging.info('Ocurrencia:'+str(ocurrencia))
             # niveles de luz y movimiento, puertas
             if(lugar=='bano_cuarto'):
                 print(ocurrencia)
@@ -349,16 +366,18 @@ def monitorCasa():
             movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.01*delta))  
 
 
-        if(time.time() - dweepy_time > 20):
+        if(time.time() - dweepy_time > 10):
             dweepy_time = time.time()
             #print "registro dw 1"
             mov_send = {}
             for lugar in lugares:
                 mov_send[lugar] = str(round(movimiento_st[lugar],2))
             #print mov_send
+            logging.info('Estado movimiento:'+str(mov_send))
             try:
                 #dweepy.dweet_for('well-groomed-move',mov_send)
                 save_dweet('well-groomed-move',mov_send)
+
             except:
                 print "error dweepy 1"
             
@@ -407,6 +426,7 @@ def monitorCasa():
                 #dweepy.dweet_for('pretty-instrument',glob_send)
                 save_dweet('kindly-police',luz_send) 
                 save_dweet('pretty-instrument',glob_send)
+                logging.info('Estado global:'+str(glob_send))
             except:
                 print "error dweepy 4"
 
@@ -466,6 +486,7 @@ def monitorCasa():
             if(len(actuales)>0):
                 for comando in actuales:
                     #print comando
+                    logging.info('Comando: '+str(comando))
                     if(comando[0]=='aire_acondicionado'):
                         print "Aire acondicionado"
                         xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
@@ -742,9 +763,9 @@ def apagarTodas(luces):
 
 def chapa(cerrar, xbee):
     if(cerrar):
-        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='P2',parameter='\x05')
         time.sleep(0.2)
-        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x04')
+        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='P2',parameter='\x04')
         globales['chapa'] = True
     else:
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x05')
