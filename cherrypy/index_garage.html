@@ -7,6 +7,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">   
   <script type="text/javascript">
        $(document).ready(function() {
+         
+         $.get("/info_bas", {})
+         .done(function(string){
+          $("#estado").append(string);
+         });
+
+         
+         
+      
 
          $("#accion-garage").click(function(e) {
            $.post("/garage", {})
@@ -33,6 +42,7 @@
            $.post("/alarma_des", {})
             .done(function(string) {
                $("#respuesta input").val(string);
+
             });
            e.preventDefault();
          });
@@ -153,8 +163,14 @@
 </tr>
 </table> 
 <div id="respuesta">
+  <table class="table">
+    <tr><td style="padding:5px">
          <input type="text" />
+        </td></tr>
       </div>
+      <tr><td>
+      <div id="estado"> </div>
+    </td></tr></table>
      </div>
    </body>
 </html>

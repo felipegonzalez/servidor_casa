@@ -80,6 +80,19 @@ class controlAire(object):
             cur.execute(commandx)
         return 'Enviado comando AC'
 
+class infoBasica(object):
+    exposed = True
+    @cherrypy.tools.accept(media='text/plain')
+    def GET(self, resp=''):
+        con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
+        with con2:
+            cur = con2.cursor()
+            commandx = "SELECT * from Status ORDER BY medicion, lugar"
+            res = cur.execute(commandx)
+        tabla = HTML.table(res)
+        con2.close()
+        return tabla
+
 class activarDormir(object):
     exposed = True
     @cherrypy.tools.accept(media='text/plain')
@@ -90,6 +103,9 @@ class activarDormir(object):
             commandx = "INSERT INTO pendientes VALUES('dormir','0')"
             cur.execute(commandx)
         return 'Comando dormir'
+
+
+
 
 class chapaCerrar(object):
     exposed = True
@@ -183,6 +199,11 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
+         '/info_bas': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
          '/zumbador': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
@@ -256,6 +277,7 @@ if __name__ == '__main__':
     webapp.lucescocina = lucesCocina()
     webapp.apagarcocina = apagarCocina()
     webapp.zumbador = puertaZumbar()
+    webapp.info_bas = infoBasica()
 
     cherrypy.quickstart(webapp, '/', conf)
 
