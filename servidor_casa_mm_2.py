@@ -30,7 +30,7 @@ from collections import deque
 ##logging
 format_logging = logging.Formatter(fmt='%(levelname)s:%(asctime)s:%(name)s: %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
 h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/casa_monitor.log', encoding='utf8',
-        interval=1, when='D', backupCount=1)
+        interval=1, when='midnight', backupCount=4000)
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
 h.setFormatter(format_logging)
