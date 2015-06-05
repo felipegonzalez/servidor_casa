@@ -20,6 +20,7 @@ import os
 import sys
 import subprocess
 from soco import SoCo
+import soco
 from say import text2mp3 
 import dweepy
 #import Adafruit_BBIO.GPIO as GPIO
@@ -38,7 +39,7 @@ h.setLevel(logging.DEBUG)
 root_logger.addHandler(h)
 ### end loggig handler
 print('Creado logging')
-logging.info('Comienza logging')
+#logging.info('Comienza logging')
 
 
 tiempos = deque([0.0,0.0,0.0,0.0,0.0])
@@ -76,7 +77,7 @@ ip_hue ="http://192.168.100.2/api/newdeveloper/"
 payoff = json.dumps({"on":False})
 payon = json.dumps({"on":True, "bri":255})
 
-ip_sonos = "192.168.100.13" ## ip de bocina play 1 (puede cambiar) TODO
+ip_sonos = "192.168.100.7" ## ip de bocina play 1 (puede cambiar) TODO
 PATH ='/Volumes/mmshared/sonidos'
 path_s ='//homeserver/mmshared/sonidos/'
 ALERT = 'alert4.mp3' 
@@ -84,8 +85,8 @@ LANGUAGE = 'es' # speech language
 texto_1 = "Iniciando sistema"
 
 
-sonos = SoCo(ip_sonos)
-
+#sonos = SoCo(ip_sonos)
+sonos = soco.discover().pop()
 #ip_felipe = '192.168.100.6'
 #ip_tere = '192.168.100.7'
 
@@ -125,8 +126,8 @@ gas = {'cocina':0.0, 'cuarto':0.0}
 puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
-    'ac_encendido':False, 'felipe':False, 'tere':False,
-    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False}
+    'ac_encendido':False, 'auto_ac':True, 'felipe':False, 'tere':False, 
+    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False,'auto_luces':True}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
@@ -234,7 +235,7 @@ def monitorCasa():
          # apagar si no se ha detectado movimiento en un rato
         for key in tiempo_movimiento:
             if((tstamp - tiempo_movimiento[key] ) >= delay_luces_l[key]):
-                if(globales['activo'] and estado_luces[key]):
+                if(globales['activo'] and estado_luces[key] and globales['auto_luces']):
                     if(key=='cocina'):
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     else:
@@ -350,7 +351,7 @@ def monitorCasa():
             #print "Check lights"
             try:
                 check_lights_time = time.time()
-                r_state = requests.get(ip_hue+'lights/', timeout=0.05)
+                r_state = requests.get(ip_hue+'lights/', timeout=0.1)
                 rs = r_state.json()
                 for key in rs:
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
@@ -461,11 +462,11 @@ def monitorCasa():
 
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(globales['activo'] and temperaturas['tv'] >= 24 and (not globales['ac_encendido'])):
-            if(movimiento_st['estudiof'] > 0.01):
+        if(globales['activo'] and temperaturas['tv'] >= 24 and (not globales['ac_encendido']) and globales['auto_ac']):
+            if(movimiento_st['estudiof'] > 0.5):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                 globales['ac_encendido'] = True
-        if(temperaturas['tv'] < 21.2 and globales['ac_encendido']):
+        if(temperaturas['tv'] < 22 and globales['ac_encendido'] and globales['auto_ac']):
             globales['ac_encendido'] = False
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
             
@@ -514,6 +515,8 @@ def monitorCasa():
                             for key in luces:
                                 apagarGrupo(luces[key])
                             globales['activo'] = False
+                            actualizar_global('alarma', 1.0, con2)
+                            actualizar_global('activo', 0.0, con2)
                         if(comando[1]=='0'):
                             globales['alarma'] = False
                             tocar("alarma_desactivada.mp3")
@@ -523,6 +526,8 @@ def monitorCasa():
                             globales['activo'] = True
                             globales['alarma_gas'] = False
                             globales['alarma_gas_enviada'] = False
+                            actualizar_global('alarma', 0.0, con2)
+                            actualizar_global('activo', 1.0, con2)
                     ##### wit.ai
                     if(comando[0]=='decir'):
                         print "^^^^^^^^ decir"+comando[1]
@@ -564,8 +569,14 @@ def monitorCasa():
                         print "Abrir chapa"
                         chapa(False, xbee = xbee)
 
-                    if(comando[0]=='mantener_luces'):
-                        globales['activo'] = not globales['activo']
+                    if(comando[0]=='auto_luces'):
+                        #globales['activo'] = not globales['activo']
+                        globales['auto_luces'] = not globales['auto_luces']
+                        actualizar_global('auto_luces', int(globales['auto_luces']), con2)
+                    if(comando[0]=='auto_ac'):
+                        #globales['activo'] = not globales['activo']
+                        globales['auto_ac'] = not globales['auto_ac']
+                        
                         #try:
                         #   with con2:
                         #        cur2 = con2.cursor()
@@ -747,7 +758,7 @@ def procesar_samples_unif(response, st):
 
 
 def apagarGrupo(grupo):
-   for luz in grupo:
+    for luz in grupo:
         try:
             r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payoff, timeout=0.1)
         except:
@@ -770,18 +781,24 @@ def chapa(cerrar, xbee):
         time.sleep(0.2)
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='P2',parameter='\x04')
         globales['chapa'] = True
+        actualizar_global('chapa', 1.0, con2)
+
     else:
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x05')
         time.sleep(0.2)
         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D0',parameter='\x04')
         globales['chapa'] = False
+        actualizar_global('chapa', 0.0, con2)
 
 def actualizar_global(item,valor, con2):
+    print item
+    print valor
     try:
         with con2:
             cur2 = con2.cursor()
-            command1 = "UPDATE status SET valor ="+int(valor)+" WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
-
+            command1 = "UPDATE status SET valor ="+str(int(valor))+" WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
+            print command1
+            cur2.execute(command1)
     except:
         print "Error sqlite globales ultimas"
 
