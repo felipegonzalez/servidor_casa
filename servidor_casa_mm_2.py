@@ -570,6 +570,7 @@ def monitorCasa():
                         chapa(False, xbee = xbee)
 
                     if(comando[0]=='auto_luces'):
+                        print("Autoluz toggle")
                         #globales['activo'] = not globales['activo']
                         globales['auto_luces'] = not globales['auto_luces']
                         actualizar_global('auto_luces', int(globales['auto_luces']), con2)

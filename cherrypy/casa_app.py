@@ -12,7 +12,7 @@ class control(object):
 
     @cherrypy.expose
     def controlcasa(self):
-        return file('index_garage.html')
+        return file('index_main.html')
 
 
     @cherrypy.expose
@@ -42,44 +42,36 @@ class control(object):
             cur.execute(commandx)
         return 'Activando garage'
 
-
-class controlAlarma(object):
-    exposed = True
-
-    @cherrypy.tools.accept(media='text/plain')
-  
-    def POST(self, resp=''):
+    @cherrypy.expose
+    def alarma(self, sw):
         con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
         with con:
             cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('activar_alarma','1')"
+            if(sw=='1'):
+                commandx = "INSERT INTO pendientes VALUES('activar_alarma','1')"
+                mensaje = 'Activando alarma'
+            else:
+                commandx = "INSERT INTO pendientes VALUES('activar_alarma','0')"
+                mensaje = 'Desactivando alarma'
             cur.execute(commandx)
-        return 'Activando alarma'
+        return mensaje
 
-class desAlarma(object):
-    exposed = True
-
-    @cherrypy.tools.accept(media='text/plain')
-  
-    def POST(self, resp=''):
+    @cherrypy.expose
+    def chapa(self, sw):
         con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
         with con:
             cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('activar_alarma','0')"
+            if(sw=='1'):
+                commandx = "INSERT INTO pendientes VALUES('chapa','1')"
+                mensaje ='Cerrar chapa'
+            if(sw=='0'):
+                commandx = "INSERT INTO pendientes VALUES('chapa','0')"
+                mensaje = 'Abrir chapa'
             cur.execute(commandx)
-        return 'Desactivando alarma'
-#class controlAire(object):
-#    exposed = True
+        return mensaje
 
-#    @cherrypy.tools.accept(media='text/plain')
-  
-#    def POST(self, resp=''):
-#        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-#        with con:
-#            cur = con.cursor()
-#            commandx = "INSERT INTO pendientes VALUES('aire_acondicionado','0')"
-#            cur.execute(commandx)
-#        return 'Enviado comando AC'
+
+
 
 class infoBasica(object):
     exposed = True
@@ -111,27 +103,7 @@ class activarDormir(object):
 
 
 
-class chapaCerrar(object):
-    exposed = True
-    @cherrypy.tools.accept(media='text/plain')
-    def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('chapa','1')"
-            cur.execute(commandx)
-        return 'Cerrar chapa'
 
-class chapaAbrir(object):
-    exposed = True
-    @cherrypy.tools.accept(media='text/plain')
-    def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('chapa','0')"
-            cur.execute(commandx)
-        return 'Abrir chapa'
 
 class puertaZumbar(object):
     exposed = True
@@ -143,14 +115,7 @@ class puertaZumbar(object):
             commandx = "INSERT INTO pendientes VALUES('puerta_zumbador','1')"
             cur.execute(commandx)
         return 'Zumbando 2s'
-class controlPausa(object):
-     exposed = True
 
-     @cherrypy.tools.accept(media='text/plain')
-  
-     def POST(self, resp=''):
-         print "Pausando algunas cosas"
-         return 'cambiar pausa'  
 
 
 class lucesCocina(object):
@@ -176,16 +141,7 @@ class apagarCocina(object):
             cur.execute(commandx)
         return 'Apagando luces' 
 
-class autoLuces(object):
-     exposed = True
-     @cherrypy.tools.accept(media='text/plain')
-     def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('auto_luces','0')"
-            cur.execute(commandx)
-        return 'Auto luces' 
+
 
 class apagarLuces(object):
      exposed = True
@@ -224,32 +180,9 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
-         '/alarma': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-         '/alarma_des': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-         #'/control_aire': {
-         #    'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-         #    'tools.response_headers.on': True,
-         #    'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         #},
+
+
          '/dormir': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-        '/lock': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-        '/unlock': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
@@ -280,13 +213,8 @@ if __name__ == '__main__':
      }
 }
     webapp = control()
-    webapp.pausa = controlPausa()
-    webapp.alarma = controlAlarma()
-    webapp.alarma_des = desAlarma()
     webapp.apagar_luces = apagarLuces()
     webapp.dormir = activarDormir()
-    webapp.lock = chapaCerrar()
-    webapp.unlock = chapaAbrir()
     webapp.lucescocina = lucesCocina()
     webapp.apagarcocina = apagarCocina()
     webapp.zumbador = puertaZumbar()

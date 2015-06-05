@@ -15,7 +15,7 @@
 
          });
          $("#autoluces").click(function(e) {
-           $.post("/autoluz", {})
+           $.post("/autoluces", {})
             .done(function(string) {
                $("#respuesta input").val(string);
             });
@@ -41,14 +41,14 @@
            e.preventDefault();
          });
           $("#accion-alarma").click(function(e) {
-           $.post("/alarma", {})
+           $.post("/alarma/1", {})
             .done(function(string) {
                $("#respuesta input").val(string);
             });
            e.preventDefault();
          });
      $("#accion-alarma2").click(function(e) {
-           $.post("/alarma_des", {})
+           $.post("/alarma/0", {})
             .done(function(string) {
                $("#respuesta input").val(string);
 
@@ -70,7 +70,7 @@
            e.preventDefault();
          });
         $("#lock-a").click(function(e) {   
-         $.post("/lock", {})
+         $.post("/chapa/1", {})
             .done(function(string) {
                $("#respuesta input").val(string);
                //$("#mi-mensaje").append(string);
@@ -83,7 +83,7 @@
 
 
         $("#unlock-a").click(function(e) {
-           $.post("/unlock", {})
+           $.post("/chapa/0", {})
             .done(function(string) {
                $("#respuesta input").val(string);
             });
