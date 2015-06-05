@@ -71,7 +71,33 @@ class control(object):
         return mensaje
 
 
+    @cherrypy.expose
+    def dormir(self):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('dormir','0')"
+            cur.execute(commandx)
+        return 'Comando dormir'
 
+    @cherrypy.expose
+    def zumbador(self):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('puerta_zumbador','1')"
+            cur.execute(commandx)
+        return 'Zumbando 2s'
+
+
+    @cherrypy.expose
+    def apagar_luces(self):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('apagar_luces','0')"
+            cur.execute(commandx)
+        return 'Apagando luces' 
 
 class infoBasica(object):
     exposed = True
@@ -89,70 +115,41 @@ class infoBasica(object):
         con2.close()
         return tabla3
 
-class activarDormir(object):
-    exposed = True
-    @cherrypy.tools.accept(media='text/plain')
-    def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('dormir','0')"
-            cur.execute(commandx)
-        return 'Comando dormir'
 
 
 
 
 
 
-class puertaZumbar(object):
-    exposed = True
-    @cherrypy.tools.accept(media='text/plain')
-    def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('puerta_zumbador','1')"
-            cur.execute(commandx)
-        return 'Zumbando 2s'
 
 
 
-class lucesCocina(object):
-     exposed = True
-     @cherrypy.tools.accept(media='text/plain')
-     def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('luces_cocina','1')"
-            cur.execute(commandx)
-        return 'Apagando luces' 
+
+# class lucesCocina(object):
+#      exposed = True
+#      @cherrypy.tools.accept(media='text/plain')
+#      def POST(self, resp=''):
+#         con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+#         with con:
+#             cur = con.cursor()
+#             commandx = "INSERT INTO pendientes VALUES('luces_cocina','1')"
+#             cur.execute(commandx)
+#         return 'Apagando luces' 
 
 
-class apagarCocina(object):
-     exposed = True
-     @cherrypy.tools.accept(media='text/plain')
-     def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('luces_cocina','0')"
-            cur.execute(commandx)
-        return 'Apagando luces' 
+# class apagarCocina(object):
+#      exposed = True
+#      @cherrypy.tools.accept(media='text/plain')
+#      def POST(self, resp=''):
+#         con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+#         with con:
+#             cur = con.cursor()
+#             commandx = "INSERT INTO pendientes VALUES('luces_cocina','0')"
+#             cur.execute(commandx)
+#         return 'Apagando luces' 
 
 
 
-class apagarLuces(object):
-     exposed = True
-     @cherrypy.tools.accept(media='text/plain')
-     def POST(self, resp=''):
-        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
-        with con:
-            cur = con.cursor()
-            commandx = "INSERT INTO pendientes VALUES('apagar_luces','0')"
-            cur.execute(commandx)
-        return 'Apagando luces' 
 
 #class estadoSys(object):
 #    exposed = True
@@ -165,59 +162,22 @@ if __name__ == '__main__':
              'tools.sessions.on': True,
              'tools.staticdir.root': os.path.abspath(os.getcwd())
          },
-         '/garage': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
          '/info_bas': {
              'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
-         '/zumbador': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
 
-
-         '/dormir': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-        '/lucescocina': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-        '/apagarcocina': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-         '/apagar_luces': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
-         '/pausa': {
-             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-             'tools.response_headers.on': True,
-             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
-         },
          '/dist/css/bootstrap.min.css': {
 		'tools.staticfile.on' : True,
 		'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/css/bootstrap.min.css"
-     }
+        },
+        '/dist/app.js':{
+            'tools.staticfile.on' : True,
+            'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/app.js"
+        }
 }
     webapp = control()
-    webapp.apagar_luces = apagarLuces()
-    webapp.dormir = activarDormir()
-    webapp.lucescocina = lucesCocina()
-    webapp.apagarcocina = apagarCocina()
-    webapp.zumbador = puertaZumbar()
     webapp.info_bas = infoBasica()
 
     cherrypy.quickstart(webapp, '/', conf)
