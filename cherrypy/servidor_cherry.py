@@ -87,11 +87,14 @@ class infoBasica(object):
         con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
         with con2:
             cur = con2.cursor()
-            commandx = "SELECT * from Status ORDER BY medicion, lugar"
+            commandx = "SELECT medicion, valor from Status WHERE lugar = 'global'  "
+            #commandx = "SELECT * from Status  ORDER BY medicion, lugar "
             res = cur.execute(commandx)
-        tabla = HTML.table(res)
+        tabla = HTML.table(res).split('\n')
+        tabla2 = " ".join(tabla[1:(len(tabla)-1)])
+        tabla3 =  "<table class='table'>"+tabla2+"</table>"
         con2.close()
-        return tabla
+        return tabla3
 
 class activarDormir(object):
     exposed = True
@@ -171,6 +174,17 @@ class apagarCocina(object):
             commandx = "INSERT INTO pendientes VALUES('luces_cocina','0')"
             cur.execute(commandx)
         return 'Apagando luces' 
+
+class autoLuces(object):
+     exposed = True
+     @cherrypy.tools.accept(media='text/plain')
+     def POST(self, resp=''):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('auto_luces','0')"
+            cur.execute(commandx)
+        return 'Auto luces' 
 
 class apagarLuces(object):
      exposed = True
@@ -259,6 +273,11 @@ if __name__ == '__main__':
              'tools.response_headers.on': True,
              'tools.response_headers.headers': [('Content-Type', 'text/plain')],
          },
+         '/autoluces': {
+             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+             'tools.response_headers.on': True,
+             'tools.response_headers.headers': [('Content-Type', 'text/plain')],
+         },
          '/dist/css/bootstrap.min.css': {
 		'tools.staticfile.on' : True,
 		'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/css/bootstrap.min.css"
@@ -278,6 +297,7 @@ if __name__ == '__main__':
     webapp.apagarcocina = apagarCocina()
     webapp.zumbador = puertaZumbar()
     webapp.info_bas = infoBasica()
+    webapp.autoluces = autoLuces()
 
     cherrypy.quickstart(webapp, '/', conf)
 

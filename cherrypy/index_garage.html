@@ -1,18 +1,26 @@
 <!DOCTYPE html>
 <html>
    <head>
-   <h3> </h3>
-     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
-     <link href="/dist/css/bootstrap.min.css" rel="stylesheet">
+     <link href="/dist/css/bootstrap.min.css" rel="stylesheet"> 
+          <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">   
   <script type="text/javascript">
        $(document).ready(function() {
          
          $.get("/info_bas", {})
          .done(function(string){
-          $("#estado").append(string);
-         });
 
+          $("#estado").append(string);
+
+         });
+         $("#autoluces").click(function(e) {
+           $.post("/autoluces", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
          
          
       
@@ -21,6 +29,7 @@
            $.post("/garage", {})
             .done(function(string) {
                $("#respuesta input").val(string);
+
             });
            e.preventDefault();
          });
@@ -60,13 +69,19 @@
             });
            e.preventDefault();
          });
-        $("#lock-a").click(function(e) {
-           $.post("/lock", {})
+        $("#lock-a").click(function(e) {   
+         $.post("/lock", {})
             .done(function(string) {
                $("#respuesta input").val(string);
-            });
-           e.preventDefault();
+               //$("#mi-mensaje").append(string);
+            }); 
          });
+
+        $('button').bind('touchend', function(e){
+          $(this).blur();
+        });
+
+
         $("#unlock-a").click(function(e) {
            $.post("/unlock", {})
             .done(function(string) {
@@ -78,6 +93,7 @@
            $.post("/lucescocina", {})
             .done(function(string) {
                $("#respuesta input").val(string);
+
             });
            e.preventDefault();
          });
@@ -109,6 +125,11 @@
      <button id="aire" class="btn btn-default btn-lg">Aire TV</button>     
 </td><td  style="padding:5px">
      <button id="apagar-luces" class="btn btn-default btn-lg">Apagar luces</button>     
+</td></tr>
+<tr><td  style="padding:5px">
+     <button id="autoaire" class="btn btn-default btn-lg">Auto AC</button>     
+</td><td  style="padding:5px">
+     <button id="autoluces" class="btn btn-default btn-lg">Auto luces</button>     
 </td></tr>
 <!---
 <tr>
@@ -162,6 +183,7 @@
 
 </tr>
 </table> 
+<div id="mi-mensaje"></div>
 <div id="respuesta">
   <table class="table">
     <tr><td style="padding:5px">
@@ -169,6 +191,7 @@
         </td></tr>
       </div>
       <tr><td>
+
       <div id="estado"> </div>
     </td></tr></table>
      </div>
