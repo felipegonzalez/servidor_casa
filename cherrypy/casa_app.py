@@ -25,6 +25,15 @@ class control(object):
         return 'Auto luces' 
 
     @cherrypy.expose
+    def auto_ac(self):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('auto_ac','0')"
+            cur.execute(commandx)
+        return 'Auto ac toggle' 
+
+    @cherrypy.expose
     def control_aire(self):
         con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
         with con:
@@ -106,12 +115,12 @@ class infoBasica(object):
         con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
         with con2:
             cur = con2.cursor()
-            commandx = "SELECT medicion, valor from Status WHERE lugar = 'global'  "
-            #commandx = "SELECT * from Status  ORDER BY medicion, lugar "
+            commandx = "SELECT timestamp, medicion, valor from Status WHERE lugar = 'global'  OR (lugar='tv' AND medicion='temperature') "
+            #commandx = "SELECT timestamp,medicion,valor,lugar from Status  ORDER BY lugar, medicion "
             res = cur.execute(commandx)
         tabla = HTML.table(res).split('\n')
         tabla2 = " ".join(tabla[1:(len(tabla)-1)])
-        tabla3 =  "<table class='table'>"+tabla2+"</table>"
+        tabla3 =  "<table class='table table-striped lead'>"+tabla2+"</table>"
         con2.close()
         return tabla3
 
