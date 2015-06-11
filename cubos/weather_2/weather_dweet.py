@@ -7,7 +7,7 @@ import logging
 import logging.handlers
 
 ## logging
-format_logging = logging.Formatter(fmt='%(levelname)s:%(asctime)s:%(name)s: %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
+format_logging = logging.Formatter(fmt='%(levelname)s|%(asctime)s|%(name)s| %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
 h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/estacion_meteo.log', encoding='utf8',
         interval=1, when='D', backupCount=1)
 root_logger = logging.getLogger()
@@ -20,7 +20,7 @@ p = phant.Phant("XGvXXOnn1aFKYpJGvV6r", 'temperature','humidity',
 	'wind_direction','wind_speed','rain_mm_day',private_key = "1J0ggV88qKtMbqDnN64x")
 while(True):
 	try:
-		r = requests.get('http://meteoyun.local/arduino/weather/0')
+		r = requests.get('http://estacionyun.local/arduino/weather/0')
 		print('Dweeting')
 		print(r.text.strip("\r\n"))
 		logging.info('Estacion:'+r.text.strip("\r\n"))

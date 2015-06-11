@@ -29,7 +29,7 @@ import cPickle
 from collections import deque
 
 ##logging
-format_logging = logging.Formatter(fmt='%(levelname)s:%(asctime)s:%(name)s: %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
+format_logging = logging.Formatter(fmt='%(levelname)s|%(asctime)s|%(name)s| %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
 h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/casa_monitor.log', encoding='utf8',
         interval=1, when='midnight', backupCount=4000)
 root_logger = logging.getLogger()
@@ -61,7 +61,8 @@ myxbees = {
     '0013a20040bef862':'cocina_entrada',
     '0013a20040be4592':'estudiot',
     '0013a20040c2833b':'bano_cuarto',
-    '0013a20040caaddc':'bano_escalera'
+    '0013a20040caaddc':'bano_escalera',
+    '0013a20040c46287':'estudiof' ## este es el sensor de aire.
     }
 
 #lugares_xbee = {}
@@ -157,7 +158,8 @@ def monitorCasa():
     globales['alarma_enviada'] = False
 
     globales['activo'] = True
-   
+    chapa_por_cerrar = False
+
     print("Probando sonos...")
     tocar('iniciar.mp3')
 
@@ -252,14 +254,16 @@ def monitorCasa():
         ## leer xbee y procesar ############################
 
         response = xbee.wait_read_frame(timeout=0.15)
-
+        #print(response)
 
         if('source_addr_long' in response.keys()):
             source = response['source_addr_long'].encode('hex')
+
             lugar = myxbees[source]
-            if(lugar=='bano_escalera'):
-                print "***** " + lugar
-                print(response)
+            
+            #if(lugar=='bano_escalera'):
+            #    print "***** " + lugar
+            #    print(response)
             #if(lugar=='cocina_entrada'):
             #    print(lugar)
             #    print(response)
@@ -274,14 +278,16 @@ def monitorCasa():
         #######################################################   
             logging.info('Ocurrencia:'+str(ocurrencia))
             # niveles de luz y movimiento, puertas
-            if(lugar=='bano_cuarto'):
-                print(ocurrencia)
+          
             for item in ocurrencia:
                 if(len(item)>6): ## evitar mesnajes de error de xbees
                     sensor_i = item[3]
                     lugar_i = item[2]
                     valor_i = item[6]
                     ## actualizar lecturas de luz
+                    if(sensor_i=='dust_density'):
+                        print("***************")
+                        print(ocurrencia)
                     if(sensor_i == 'photo'):
                         try:
                             niveles_luz[lugar_i] = float(valor_i)
@@ -315,7 +321,11 @@ def monitorCasa():
                                 globales['alarma_trip'] = True
                                 tocar("conversa.mp3") ## tocar cuando hay alarma
                     if(sensor_i=='puerta' and valor_i=='1'):
+                        if(puertas[lugar_i]==0 and lugar=='puerta'):
+                            tiempo_cerrar_chapa = time.time()
+                            chapa_por_cerrar = True
                         puertas[lugar_i] = 1
+                        
                     ## temperaturas
                     if(sensor_i=='temperature'):
                         if(temperaturas[lugar_i] > 0):
@@ -462,15 +472,22 @@ def monitorCasa():
 
         ############ temperatura #########
         # activar aire si temperatura en tv es alta y hay alguien presente
-        if(globales['activo'] and temperaturas['tv'] >= 24 and (not globales['ac_encendido']) and globales['auto_ac']):
-            if(movimiento_st['estudiof'] > 0.5):
+        if(globales['activo'] and temperaturas['tv'] >= 24.5 and (not globales['ac_encendido']) and globales['auto_ac']):
+            if(movimiento_st['tv'] > 0.4):
                 xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                 globales['ac_encendido'] = True
+                actualizar_global('ac',int(globales['ac_encendido']), con2)
+
         if(temperaturas['tv'] < 22 and globales['ac_encendido'] and globales['auto_ac']):
             globales['ac_encendido'] = False
             xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
-            
+            actualizar_global('ac',int(globales['ac_encendido']), con2)
 
+            
+        ##### chapa cerrar por seguridad #####
+        if(chapa_por_cerrar and time.time()-tiempo_cerrar_chapa > 60*3):
+            chapa(True, xbee=xbee)
+            chapa_por_cerrar = False
       
            
         # procesar comandos pendientes
@@ -495,6 +512,7 @@ def monitorCasa():
                         print "Aire acondicionado"
                         xbee.tx(dest_addr_long='\x00\x13\xa2\x00\x40\xbf\x96\x2c',dest_addr='\x40\xb3', data=b'1')
                         globales['ac_encendido'] = not globales['ac_encendido']
+                        actualizar_global('ac',int(globales['ac_encendido']), con2)
                     if(comando[0]=='apagar_luces'):
                         apagarTodas(luces)
                         #print "Apagando luces"
@@ -577,6 +595,8 @@ def monitorCasa():
                     if(comando[0]=='auto_ac'):
                         #globales['activo'] = not globales['activo']
                         globales['auto_ac'] = not globales['auto_ac']
+                        actualizar_global('auto_ac', int(globales['auto_ac']), con2)
+
                         
                         #try:
                         #   with con2:
@@ -603,6 +623,7 @@ def monitorCasa():
                     if(globales['activo'] and (not dormir[key])):       
                         if(time.time() - tiempo_encendido[key] > 10):
                             #print "Encender luces"
+
                             tiempo_encendido[key] = time.time()
                             estado_luces[key] = True
                             if(key=='cocina'):
@@ -669,7 +690,7 @@ def monitorCasa():
         #time_loop = time.time()
         
         if((time.time()-log_time) > 10):
-        
+            actualizar_global('heartbeat', round(sum(tiempos)/len(tiempos),2), con2)
             print '\033[91m'+'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))+'\033[0m'
             log_time = time.time()
             if(contar_mysql > 0):
@@ -761,13 +782,19 @@ def procesar_samples_unif(response, st):
 def apagarGrupo(grupo):
     for luz in grupo:
         try:
-            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payoff, timeout=0.1)
+            inicial = time.time()
+            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payoff, timeout=0.2)
+            final = time.time()
+            logging.info('Luces :'+'apagar '+str(luz)+'|' +str(final-inicial))
         except:
             print "Luces no disponibles para apagar"
 def encenderGrupo(grupo):
    for luz in grupo:
         try:
-            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.3)
+            inicial = time.time()
+            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.2)
+            final = time.time()
+            logging.info('Luces :'+'encender '+str(luz)+'|'+str(final-inicio))
         except:
             print "Luces no disponibles para encender"
 
@@ -794,10 +821,13 @@ def chapa(cerrar, xbee):
 def actualizar_global(item,valor, con2):
     print item
     print valor
+    tstamp = time.time()
+    st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
+
     try:
         with con2:
             cur2 = con2.cursor()
-            command1 = "UPDATE status SET valor ="+str(int(valor))+" WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
+            command1 = "UPDATE status SET valor ="+str(valor)+", timestamp='"+str(st) +"' WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
             print command1
             cur2.execute(command1)
     except:
