@@ -156,8 +156,14 @@ def monitorCasa():
     globales['alarma'] = False
     globales['alarma_trip'] = False
     globales['alarma_enviada'] = False
-
+    globales['auto_ac'] = False
     globales['activo'] = True
+    actualizar_global('auto_ac',0, con2)
+    actualizar_global('activo',1.0, con2)
+    actualizar_global('auto_luces',1.0, con2)
+    actualizar_global('alarma',0, con2)
+    actualizar_global('chapa',0, con2)
+
     chapa_por_cerrar = False
 
     print("Probando sonos...")
