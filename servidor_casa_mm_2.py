@@ -584,11 +584,14 @@ def monitorCasa():
                     if(comando[0]=='dormir'):
                         dormir['cuarto'] = not dormir['cuarto']
                         if(dormir['cuarto']):
+                            sonos.volume = 30
                             decir('Listo para dormir')
                             apagarGrupo(luces['cuarto'])
                             chapa(True, xbee = xbee)
                         else:
+                            sonos.volume=70
                             decir('Hora de despertar')
+                            sonos.volume =40
                     if(comando[0]=='luces_cocina' and comando[1]=='1'):
                         #print "Prender cocina"
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
