@@ -308,8 +308,23 @@ def monitorCasa():
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
                     if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
                         #print 'sonido_env: '+valor_i
-                        if(float(valor_i) > 10):
-                            movimiento[lugar_i] = True
+                        if(lugar_i=='cuarto'):
+                            if(float(valor_i) > 10):
+                                movimiento[lugar_i] = True
+                        if(lugar_i=='vestidor'):
+                            try:
+                                valor_snd = float(valor_i)
+                                if(valor_snd > 155.0):
+                                    if(not globales['ac_encendido']):
+                                        globales['ac_encendido'] = True
+                                        actualizar_global('ac', 1.0, con2)
+                                else:
+                                    if(globales['ac_encendido']):
+                                        globales['ac_encendido'] = False
+                                        actualizar_global('ac', 0.0, con2)
+                                    #
+                            except:
+                                logging('Error sonido')
                             #print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
@@ -323,9 +338,9 @@ def monitorCasa():
                             if(not  globales['alarma']):
                                 tocar("doorbell.mp3")
                             else:
-                                tiempo_sonos=time.time() + 120
+                                tiempo_sonos=time.time() + 50
                                 globales['alarma_trip'] = True
-                                tocar("conversa.mp3") ## tocar cuando hay alarma
+                                tocar("bs_alarm.mp3") ## tocar cuando hay alarma
                     if(sensor_i=='puerta' and valor_i=='1'):
                         if(puertas[lugar_i]==0 and lugar=='puerta'):
                             tiempo_cerrar_chapa = time.time()
