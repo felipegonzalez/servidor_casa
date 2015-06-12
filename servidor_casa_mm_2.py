@@ -324,7 +324,7 @@ def monitorCasa():
                                         actualizar_global('ac', 0.0, con2)
                                     #
                             except:
-                                logging('Error sonido')
+                                logging.info('Error sonido')
                             #print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
@@ -388,7 +388,8 @@ def monitorCasa():
                 rs = r_state.json()
                 for key in rs:
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
-                print estado_hue
+                #print estado_hue
+                logging.info('Estado luces: '+str(estado_hue))
             except:
                 logging.error('Error getting light states')
 
