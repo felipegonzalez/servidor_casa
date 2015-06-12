@@ -340,7 +340,9 @@ def monitorCasa():
                             else:
                                 tiempo_sonos=time.time() + 50
                                 globales['alarma_trip'] = True
+                                sonos.volume = 100
                                 tocar("bs_alarm.mp3") ## tocar cuando hay alarma
+                                sonos.volume = 40
                     if(sensor_i=='puerta' and valor_i=='1'):
                         if(puertas[lugar_i]==0 and lugar=='puerta'):
                             tiempo_cerrar_chapa = time.time()
