@@ -53,7 +53,8 @@ void setup() {
   //  ; // wait for Console port to connect.
   //}
   //Console.println("You're connected to the Console!!!!");
-  
+  pinMode(anemoLedPin, OUTPUT);
+  analogWrite(anemoLedPin, LOW);
   time = millis();
   time2 = millis();
   time3 = millis();
@@ -82,11 +83,11 @@ void loop() {
         timeString += c;
      }
    hours = timeString.substring(0, timeString.indexOf(":")).toInt();
-   if(prev_hours != hours & hours==0){
+   if(prev_hours != hours){
      //reset rain count
      count_rain = 0;
    }
-  prev_hours = hours;
+  int prev_hours = hours;
   YunClient client = server.accept();
   if(client){
     process(client);
@@ -110,7 +111,7 @@ void loop() {
     time_rep = millis();
     vane_latest = getVane();         
   }
-  if(millis() - time_rep_r > 1000){
+  if(millis() - time_rep_r > 1000*10){
     Console.print("Rainfall (mm/h):");
     rain_latest = getRainfall();
     //Console.println(rain_latest);
@@ -212,6 +213,7 @@ void process(YunClient client) {
      client.print(vane_latest);
       client.print("',");
       client.print("'wind_speed':'");
+ 
         client.print(wind_latest);
               client.print("',");
       client.print("'rain_mm_day':'");

@@ -2,14 +2,18 @@
 #define pin_photo 1
 #define pin_irled 13
 #define pin_ac 0
+#define pin_envelope 3
 
 int motion;
 int photo;
 long tiempo_actual;
 long tiempo_ultima;
 long tiempo_pir;
+long tiempo_envelope;
 int no_samples = 100;
 int samples[100];
+float envelope = 0;
+float lambda = 0.07;
 
 void setup()  {                
   pinMode(pin_irled, OUTPUT);
@@ -17,6 +21,7 @@ void setup()  {
   Serial.begin(9600);
   tiempo_ultima = millis();
   tiempo_actual = millis();
+  tiempo_envelope = millis();
 }
 
 void loop() {
@@ -27,6 +32,13 @@ void loop() {
     registrar_enviar();
     tiempo_ultima = millis();
   }
+
+  if(tiempo_actual >= tiempo_envelope + 250){
+    int lectura_envelope = analogRead(pin_envelope);
+    envelope = lambda*lectura_envelope + (1.0-lambda)*envelope;
+    tiempo_envelope = millis();
+  }
+
   if(motion==0){
     if(tiempo_actual >= tiempo_pir + 2000){
       tiempo_pir = millis();
@@ -200,19 +212,19 @@ void SendOnCode() {
   Serial.println(1-motion);
   Serial.print("photo,analog,1,");
   Serial.println(photo);
-  float suma = 0;
-  for(int i = 0; i < no_samples; i++) {
-      int val = analogRead(pin_ac);
-      samples[i] = val;
-      suma = suma + val;
-      delay(2);
-    }
-  float media = suma/no_samples;
-  float suma_cuad = 0;
-  for(int i =0; i < no_samples; i++){
-      suma_cuad = suma_cuad + (samples[i] - media)*(samples[i] -  media);
-  }
-  float rms = sqrt(suma_cuad/no_samples);
-  Serial.print("ac_current,rms,1,");
-  Serial.println(rms);
+  //float suma = 0;
+  //for(int i = 0; i < no_samples; i++) {
+  //    int val = analogRead(pin_ac);
+  //    samples[i] = val;
+  //    suma = suma + val;
+  //    delay(2);
+  //  }
+  //float media = suma/no_samples;
+  //float suma_cuad = 0;
+  //for(int i =0; i < no_samples; i++){
+  //    suma_cuad = suma_cuad + (samples[i] - media)*(samples[i] -  media);
+  //}
+  //float rms = sqrt(suma_cuad/no_samples);
+  Serial.print("lev_snd,analog,1,");
+  Serial.println(envelope);
 }
