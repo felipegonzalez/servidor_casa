@@ -308,8 +308,23 @@ def monitorCasa():
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
                     if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
                         #print 'sonido_env: '+valor_i
-                        if(float(valor_i) > 10):
-                            movimiento[lugar_i] = True
+                        if(lugar_i=='cuarto'):
+                            if(float(valor_i) > 10):
+                                movimiento[lugar_i] = True
+                        if(lugar_i=='vestidor'):
+                            try:
+                                valor_snd = float(valor_i)
+                                if(valor_snd > 155.0):
+                                    if(not globales['ac_encendido']):
+                                        globales['ac_encendido'] = True
+                                        actualizar_global('ac', 1.0, con2)
+                                else:
+                                    if(globales['ac_encendido']):
+                                        globales['ac_encendido'] = False
+                                        actualizar_global('ac', 0.0, con2)
+                                    #
+                            except:
+                                logging.info('Error sonido')
                             #print "Sonido"
                     ## reed switches
                     if(sensor_i=='puerta' and valor_i=='0'):
@@ -323,9 +338,11 @@ def monitorCasa():
                             if(not  globales['alarma']):
                                 tocar("doorbell.mp3")
                             else:
-                                tiempo_sonos=time.time() + 120
+                                tiempo_sonos=time.time() + 50
                                 globales['alarma_trip'] = True
-                                tocar("conversa.mp3") ## tocar cuando hay alarma
+                                sonos.volume = 100
+                                tocar("bs_alarm.mp3") ## tocar cuando hay alarma
+                                sonos.volume = 40
                     if(sensor_i=='puerta' and valor_i=='1'):
                         if(puertas[lugar_i]==0 and lugar=='puerta'):
                             tiempo_cerrar_chapa = time.time()
@@ -371,7 +388,8 @@ def monitorCasa():
                 rs = r_state.json()
                 for key in rs:
                     estado_hue[rs[key]['name']] = rs[key]['state']['on']
-                print estado_hue
+                #print estado_hue
+                logging.info('Estado luces: '+str(estado_hue))
             except:
                 logging.error('Error getting light states')
 
@@ -567,11 +585,14 @@ def monitorCasa():
                     if(comando[0]=='dormir'):
                         dormir['cuarto'] = not dormir['cuarto']
                         if(dormir['cuarto']):
+                            sonos.volume = 30
                             decir('Listo para dormir')
                             apagarGrupo(luces['cuarto'])
                             chapa(True, xbee = xbee)
                         else:
+                            sonos.volume=70
                             decir('Hora de despertar')
+                            sonos.volume =40
                     if(comando[0]=='luces_cocina' and comando[1]=='1'):
                         #print "Prender cocina"
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
