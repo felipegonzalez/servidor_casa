@@ -1,0 +1,306 @@
+---
+title: "Movimiento_casa"
+output: html_document
+---
+
+
+```{r}
+library(stringi)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", 
+  	"#CC79A7", '#000000' ,'#CCCC99')
+
+# The palette with black:
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# To use for fills, add
+col.fill <-  scale_fill_manual(values=cbPalette)
+# To use for line and point colors, add
+col.ptos <-   scale_colour_manual(values=cbPalette)
+```
+
+```{r, cache=T, warning=FALSE}
+
+#con <- file('mon_ej.log') 
+con <- file('monitor_mov.log') 
+open(con)
+lineas <- list()
+linea.num <- 1
+while (length(linea <- readLines(con, n = 1, warn = FALSE)) > 0) {
+  #if(stri_detect_fixed(linea, 'Estado movimiento')){
+          lineas[[linea.num]] <- linea
+          linea.num <- linea.num + 1
+  #}
+} 
+close(con)
+
+con2 <- file('gobales.log')
+open(con2)
+lineas.global <- list()
+linea.num <- 1
+while (length(linea <- readLines(con2, n = 1, warn = FALSE)) > 0) {
+  #if(stri_detect_fixed(linea, 'Estado movimiento')){
+          lineas.global[[linea.num]] <- linea
+          linea.num <- linea.num + 1
+  #}
+} 
+close(con2)
+
+
+
+lineas_2 <- lapply(1:length(lineas), function(i){
+  line <- lineas[[i]]
+  temp <- stri_split_fixed(line, 'Estado movimiento:', n= 2)[[1]]
+  tstamp <- stri_sub(temp[1], 6, -8)
+  data_1 <- stri_split_fixed(stri_replace_all_regex(temp[2], "[\\{\\}']", ""),",")[[1]]
+  data_2 <- lapply(data_1, function(x) (stri_split_fixed(x, ":")[[1]]))
+  data_3 <- lapply(data_2, function(x){data.frame(lugar = x[1], movimiento = as.double(x[2]) )})
+  data_4 <- bind_rows(data_3)
+  data_4$tstamp <- tstamp
+  data_4$evento_num <- i
+  data_4
+})
+
+lineas_3 <- lapply(1:length(lineas.global), function(i){
+  line <- lineas.global[[i]]
+  temp <- stri_split_fixed(line, 'Estado global:', n= 2)[[1]]
+  tstamp <- stri_sub(temp[1], 6, -8)
+  data_1 <- stri_split_fixed(stri_replace_all_regex(temp[2], "[\\{\\}']", ""),",")[[1]]
+  data_2 <- lapply(data_1, function(x) (stri_split_fixed(x, ":")[[1]]))
+  data_3 <- lapply(data_2, function(x){data.frame(lugar = x[1], movimiento = as.double(x[2]) )})
+  data_4 <- bind_rows(data_3)
+  data_4$tstamp <- tstamp
+  data_4$evento_num <- i
+  data_4
+})
+
+
+
+
+
+dat_mov <- rbind_all(lineas_2)
+dat_mov$lugar <- stri_trim(dat_mov$lugar)
+dat_mov$tstamp <- (parse_date_time(dat_mov$tstamp, "%Y-%m-%d %H:%M:%S"))
+nrow(dat_mov)
+
+dat_glob <- rbind_all(lineas_3)
+dat_glob$lugar <- stri_trim(dat_glob$lugar)
+dat_glob$tstamp <- (parse_date_time(dat_glob$tstamp, "%Y-%m-%d %H:%M:%S"))
+nrow(dat_glob)
+
+```
+  
+```{r}
+dat <- dat_mov %>% 
+  select(-evento_num) %>%
+  spread(lugar, movimiento)
+dat$time_stamp <- (parse_date_time(dat$tstamp, "%Y-%m-%d %H:%M:%S"))
+dat$tstamp <- NULL
+dat <- data.frame(dat)
+head(dat)
+```
+
+
+### Promedio de actividad
+
+```{r}
+dat_mov %>% group_by(lugar) %>% 
+  summarise(media = round(mean(movimiento), 3)) %>%
+  arrange(desc(media))
+```
+
+### Correlaciones
+
+```{r}
+comps.1 <- princomp(dat[,1:12])
+summary(comps.1)
+ggplot(dat.load <- data.frame(comps.1$loadings[]), 
+       aes(x=Comp.1, y=Comp.2, label=rownames(dat.load))) +
+  geom_point() + geom_text()+ geom_hline(yintercept = 0) +
+  geom_vline(xintercept=0)
+ggplot(dat.load <- data.frame(comps.1$loadings[]), 
+       aes(x=Comp.3, y=Comp.2, label=rownames(dat.load))) +
+  geom_point() + geom_text() + geom_hline(yintercept = 0) +
+  geom_vline(xintercept=0)
+```
+
+### Variables adicionales
+
+Último evento y actividad general:
+
+```{r}
+piso <- data_frame(lugar = c('entrada','puerta','cocina','sala','escalera','estudiot','estudiof','cuarto','bano_escalera','bano_cuarto','tv','vestidor'),
+                   nivel = c(rep('bajo', 4), 'escalera', rep('primero',5), rep('segundo',2)))
+dat_mov_2 <- dat_mov %>%
+  left_join(piso) %>%
+  group_by(tstamp, evento_num) %>%
+  mutate(actividad = mean(movimiento), 
+         ultimo_mov = max(movimiento),
+         ultimo = lugar[which.max(movimiento)],
+         ranking = row_number(-movimiento), anterior = lugar[ranking==2][1],
+         anterior_mov = movimiento[ranking==2][1]) %>%
+         ungroup() %>%
+         mutate(rel = anterior_mov/ultimo_mov) 
+dat_evento <- dat_mov_2 %>%
+  filter(ultimo_mov > 0.98) #%>% 
+ # filter(weekdays(tstamp)!='Thursday')
+
+
+dat_mov_2 %>% ungroup %>% 
+  select(-tstamp, -nivel) %>% data.frame %>%
+  filter(evento_num==3)
+dat_mov_2 %>% ungroup %>% 
+  select(-tstamp, -nivel) %>% data.frame %>%
+  filter(evento_num==6013)
+```
+
+Actividad general
+
+Decaimiento exponencial de lecturas de movimiento es exp(0.01*delta), con delta en segundos. En 10 seg, 1 minuto y 10 minutos los factores son
+```{r}
+exp(-0.01*10)
+exp(-0.01*60)
+exp(-0.01*60*10)
+```
+
+```{r}
+dat_mov_3 <- dat_mov_2 %>%
+  mutate(dia = weekdays(tstamp),
+         hora = (hour(tstamp)+ minute(tstamp)/60+second(tstamp)/3600))
+
+dat_glob_2 <- dat_glob %>%
+    mutate(dia = weekdays(tstamp),
+         hora = (hour(tstamp)+ minute(tstamp)/60+second(tstamp)/3600))
+
+
+act_gral <- dat_mov_3 %>% 
+  group_by(evento_num, hora,dia) %>%
+  summarise(media_activ = mean(movimiento))
+
+ggplot(act_gral, 
+       aes(x=hora, y=media_activ)) +
+  geom_line() +
+  facet_wrap(~dia, ncol=1) +
+  geom_line(data = filter(dat_glob_2, lugar=='chapa'), 
+            colour='red', aes(y=movimiento))
+ggplot(act_gral, 
+       aes(x=hora, y=media_activ)) +
+  geom_line() +
+  facet_wrap(~dia, ncol=1) +
+  geom_line(data = filter(dat_mov_3, lugar=='entrada'), 
+            colour='red',aes(y = movimiento)) +
+  geom_line(data = filter(dat_glob_2, lugar=='chapa'), 
+            colour='blue', aes(y=movimiento))
+```
+
+### Modelo HMM
+
+```{r, cache=T}
+library(depmixS4)
+plot(act_gral$evento_num, act_gral$media_activ, type="l")
+act_gral$log_media <- log(0.01 + act_gral$media_activ)
+act_gral <- act_gral %>% ungroup() %>%
+  mutate(media_activ_lag = lag(media_activ)) 
+act_gral_2 <- act_gral[!is.na(act_gral$media_activ_lag),]
+act_gral_2$media_activ_reco <- act_gral_2$media_activ + 0.01
+mod <- depmix(log(0.1+media_activ)~ 1+log(0.1+media_activ_lag), family = gaussian(), nstates = 6, data = act_gral_2)
+set.seed(112432)
+fm2 <- fit(mod, verbose = TRUE)
+summary(fm2)
+print(fm2)
+probs <- fm2@posterior
+#plot(probs[,1], type='b', col=factor(probs[,1]))
+act_gral_2$estado <- probs[,1]
+act_gral_2$prob_1 <- probs[,5+1] 
+ggplot(filter(act_gral_2, hora > 0 & hora <= 24), 
+       aes(x=hora, y=media_activ))+#-media_activ_lag )) +
+  geom_line( size=1, alpha=0.1) +
+  geom_point(aes(colour=factor(estado)), size=2) +
+  facet_wrap(~dia, ncol=1) +  col.ptos + #ylim(c(-0.10,0.10)) +
+  geom_smooth(aes(y=as.numeric(prob_1>0.99)), span=0.05, method='loess', degree=1,colour='red', alpha=0.5)
+mat_trans <- sapply(fm2@transition, function(x){round(x@parameters$coefficients, 3)})
+mat_trans
+apply(mat_trans,2, sum)
+```
+
+
+### Actividad por nivel
+
+```{r}
+dat_mov_3 <- dat_mov_2 %>%
+  left_join(piso) %>%
+  mutate(dia = weekdays(tstamp),
+         hora = (hour(tstamp)+ minute(tstamp)/60))
+
+act_gral <- dat_mov_3 %>% 
+  group_by(evento_num, hora, nivel, dia) %>%
+  summarise(media_activ = mean(movimiento))
+
+dat_graf <- data.frame(filter(act_gral, nivel!='escalera'))
+
+ggplot(dat_graf, 
+       aes(x=hora, y=media_activ, fill=nivel, colour=nivel, alpha=sqrt(media_activ))) +
+  geom_line() +
+  facet_wrap(~dia, ncol=1) 
+```
+
+
+
+### Secuencias
+
+```{r}
+conteos <- dat_evento %>% group_by(ultimo, anterior) %>%
+  summarise(conteo = n()) %>%
+  group_by(ultimo) %>%
+  mutate(prop = conteo/sum(conteo))
+conteos
+ggplot(conteos, aes(x=anterior, y=conteo, fill=ultimo, group=ultimo)) + 
+  geom_bar(stat = 'identity') + facet_wrap(~ultimo)+ 
+  coord_flip()
+ggplot(conteos, aes(x=anterior, y=prop, fill=ultimo, group=ultimo)) + 
+  geom_bar(stat = 'identity') + facet_wrap(~ultimo)+ 
+  coord_flip()
+```
+
+Mejor promedio:
+```{r}
+prom <- dat_evento %>% group_by( nivel, lugar, ultimo) %>%
+  mutate(media_mov = mean(movimiento), num_eventos = length(movimiento))
+ggplot(prom, aes(x=lugar, y=media_mov, fill=ultimo, group=ultimo, 
+                 colour=(lugar=='cuarto'))) +
+  geom_point() + facet_wrap(~ultimo)+ 
+  coord_flip()
+
+```
+
+Entender eventos de puerta
+
+```{r}
+#estudiot <- filter(dat_evento, ultimo == 'puerta')
+#estudiot_a <- estudiot %>% select(evento_num,lugar, movimiento)%>% spread(lugar, movimiento)
+```
+
+
+
+
+--------------
+
+
+Componentes
+
+```{r, eval=F}
+dat_filt <- estudiot_a
+comps.1 <- princomp(estudiot_a[,-1])$scores[,1:3]
+kmed <- kmeans(comps.1, centers=5)
+dat_filt$cluster <- kmed$cluster
+#round(prop.table(table(dat_filt$cluster, hour(dat_filt$time_stamp)),1),2)
+table(dat_filt$cluster)
+dat_2 <- dat_filt %>% data.frame %>% gather(lugar, valor, bano_cuarto:vestidor)
+dat_3 <- dat_2 %>% group_by(cluster, lugar) %>% summarise(media = round(mean(valor),2), sd=sd(valor)) 
+ggplot(dat_3, aes(x=lugar, y=media, group=cluster, ymin=media-sd, ymax=media+sd)) + facet_wrap(~cluster, ncol=2) + geom_line() + geom_point() +
+  coord_flip() + geom_linerange()
+
+```
