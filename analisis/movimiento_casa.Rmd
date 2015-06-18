@@ -85,7 +85,7 @@ dat_mov <- rbind_all(lineas_2)
 dat_mov$lugar <- stri_trim(dat_mov$lugar)
 dat_mov$tstamp <- (parse_date_time(dat_mov$tstamp, "%Y-%m-%d %H:%M:%S"))
 nrow(dat_mov)
-
+saveRDS(dat_mov, file='datos_movimiento.rds')
 dat_glob <- rbind_all(lineas_3)
 dat_glob$lugar <- stri_trim(dat_glob$lugar)
 dat_glob$tstamp <- (parse_date_time(dat_glob$tstamp, "%Y-%m-%d %H:%M:%S"))

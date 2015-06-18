@@ -9,19 +9,26 @@ const int vaneDirections[] PROGMEM={2925,2475,2700,3375,3150,225, 0, 2025,2250, 
 
 const float distPerClick = 11.781;
 Process time_lx;
-int hours, minutes, seconds, prev_hours;  
+int hours, minutes, seconds, prev_hours, prev_mins;  
 
 
 volatile unsigned long count_anem = 0;
 volatile unsigned long last_anem = 0;
 volatile unsigned long count_rain = 0;
+volatile unsigned long count_rain_h = 0;
 volatile unsigned long last_rain = 0;
+volatile unsigned long cc_rain = 0;
+int initial_rain=0;
+int final_rain=0;
 
 const int anemoLedPin = 10; // the pin that the LED is attached to
 const int vaneLedPin = 6;
 const int dhtPin = 2;
 
 DHT dht(dhtPin, DHTTYPE);
+
+
+int rain_mins[60];
 
 const int anemoPin = 3;
 const int vanePin = 5;
@@ -41,6 +48,8 @@ float humidity_latest=0;
 double wind_latest=0;
 double vane_latest=0;
 double rain_latest=0;
+double rain_h_latest=0;
+
 String timeString;
 YunServer server;
 
@@ -48,6 +57,9 @@ void setup() {
   // initialize serial communication:
   Bridge.begin();
  //Console.begin(); 
+ for(int i = 0; i < 60; i++){
+   rain_mins[i]=0;
+ }
   dht.begin();
   //while (!Console){
   //  ; // wait for Console port to connect.
@@ -67,6 +79,7 @@ void setup() {
   attachInterrupt(0, anemometerClick, FALLING);
   attachInterrupt(4, rainfallClick, FALLING);
   prev_hours=0;
+  prev_mins=0;
 
 }
 
@@ -82,11 +95,21 @@ void loop() {
         timeString += c;
      }
    hours = timeString.substring(0, timeString.indexOf(":")).toInt();
+   minutes = timeString.substring(1, timeString.indexOf(":")).toInt();
    if(prev_hours != hours & hours==0){
      //reset rain count
      count_rain = 0;
    }
+  if(prev_mins != minutes){
+    initial_rain=rain_mins[0];
+    final_rain = cc_rain;
+    rain_mins[59] = cc_rain;
+    for(int i = 0; i < 59; i++){
+      rain_mins[i] = rain_mins[i+1];
+    }
+  }
   prev_hours = hours;
+  prev_mins = minutes;
   YunClient client = server.accept();
   if(client){
     process(client);
@@ -113,6 +136,7 @@ void loop() {
   if(millis() - time_rep_r > 1000){
     Console.print("Rainfall (mm/h):");
     rain_latest = getRainfall();
+    rain_h_latest = getHourRainfall();
     //Console.println(rain_latest);
     time_rep_r = millis();
   }
@@ -128,6 +152,7 @@ void anemometerClick()
   if(diff_anem > 500) {
     count_anem++;
   }
+
 }
 
 void rainfallClick(){
@@ -135,6 +160,7 @@ void rainfallClick(){
   last_rain = micros();
   if(diff_rain > 500){
     count_rain++;
+    cc_rain++;
   }
 }
 
@@ -144,8 +170,11 @@ double getUnitWind()
   count_anem = 0;
   unsigned long time_actual = time2;
   time2 = millis();
-  double diff_t = ((millis() - time_actual)/1000.0)/3600.0;
-  return((distPerClick*count_current/100000)/(diff_t));
+  //double diff_t = ((millis() - time_actual)/1000.0)/3600.0;
+  //return((distPerClick*count_current/100000)/(diff_t));
+  double diff_s = ((millis() - time_actual)/1000.0);
+  return(2.40*count_current/diff_s);
+
 
 }
 
@@ -160,6 +189,12 @@ double getRainfall()
   //return((0.2794*count_current_r)/(diff_t));
    return(0.2794*count_current_r);
 }
+
+double getHourRainfall()
+{
+  return (0.2794*(final_rain - initial_rain));
+}
+
 
 double getVane() {
     unsigned int reading = analogRead(vanePin);
@@ -216,6 +251,9 @@ void process(YunClient client) {
               client.print("',");
       client.print("'rain_mm_day':'");
             client.print(rain_latest);  
+       client.print("',");
+             client.print("'rain_mm_hour':'");
+            client.print(rain_h_latest);  
      client.println("'}");
     
   }
