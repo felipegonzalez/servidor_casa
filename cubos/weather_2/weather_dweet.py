@@ -47,7 +47,7 @@ while(True):
 			drainin=(float(d['rain_mm_day'])/10.0)/2.54
 			rainin=(float(d['rain_mm_hour'])/10.0)/2.54
 			url_wu = url_1 + '&dateutc=now&tempf='+str(float(d['temperature'])*(9.0/5.0)+32.0) +'&humidity='+ d['humidity'] +'&dailyrainin='+str(drainin)+'&rainin='+str(rainin)+'&windspeedmph='+str(float(d['wind_speed'])/1.60934)+'&winddir='+d['wind_direction']
-			url_wu_2 = url_wu + '&dewpointf='+str(round(dewpointf,3))
+			url_wu_2 = url_wu + '&dewptf='+str(round(dewpointf,3))
 			print(url_wu_2)
 			q = requests.get(url_wu_2, timeout=10)
 			print(q.status_code)
