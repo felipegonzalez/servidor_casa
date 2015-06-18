@@ -1,0 +1,75 @@
+---
+title: "Ejemplo movimiento"
+author: "FG"
+date: "June 17, 2015"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+```
+
+La mayoría son datos de sensores PIR de movimiento. lugar = ubicación del sensor,
+tstamp: momento de medición en formato %Y-%m-%d %H:%M:%S, evento_num = id secuencial. 
+
+```{r}
+dat_mov <- readRDS('datos_movimiento.rds')
+dat_mov
+```
+
+```{r}
+dat_mov %>% group_by(lugar) %>% tally
+```
+
+Y son datos para cuatro días:
+
+```{r}
+dat_mov %>% group_by(day(tstamp)) %>% tally
+```
+
+No todos los sensores reportan a la misma tasa (algunos reportan solamente cuando hay un cambio, otros reportan cada 10 segundos, etc.). La variable
+movimiento es un número entre 0 y 1. Reporta 1 cuando el movimiento
+acaba de ocurrir, y decae a una tasa exponencial exp(-0.1s), donde
+s es el número de segundos transcurridos. En el siguiente ejemplo,
+hubo  tres eventos de movimiento (tres picos):
+
+```{r}
+ejemplo <- dat_mov %>% filter(lugar=='sala', day(tstamp)==4, 
+                              hour(tstamp) == 8, minute(tstamp)>3,
+                              minute(tstamp)<10)
+ggplot(ejemplo, aes(x=tstamp, y=movimiento)) + geom_point() + geom_line()
+```
+
+**En algunos casos, el "movimiento" detectado es por el disparo de un sensor de sonido (lugar cuarto) o un sensor de abrir/cerrar puertas (lugar entrada, lugar puerta).** 
+
+
+
+
+O también podemos trasponer, por ejemplo:
+```{r}
+dat_mov_c <- dat_mov %>% spread(lugar, movimiento)
+head(dat_mov_c[20010:20020,] %>% data.frame)
+```
+
+
+
+
+Ejemplo de cálculo de nivel de actividad general (sumando los niveles de los sensores de todos los lugares de la casa). Los periodos de oscilación en niveles bajos se deben al ruido de una construcción:
+
+```{r}
+act_gral <- dat_mov %>% 
+  mutate(dia_sem = weekdays(tstamp)) %>%
+  mutate(hora_dec = hour(tstamp)+minute(tstamp)/60+second(tstamp)/3600) %>%
+  group_by(evento_num, hora_dec, dia_sem) %>%
+  summarise(act_total = sum(movimiento))
+  
+ggplot(act_gral, aes(x=hora_dec, y=act_total)) +
+  geom_line() +
+  facet_wrap(~dia_sem, ncol=1)
+  
+
+```
+
