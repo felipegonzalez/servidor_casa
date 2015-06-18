@@ -49,7 +49,7 @@ while(True):
 			url_wu = url_1 + '&dateutc=now&tempf='+str(float(d['temperature'])*(9.0/5.0)+32.0) +'&humidity='+ d['humidity'] +'&dailyrainin='+str(drainin)+'&rainin='+str(rainin)+'&windspeedmph='+str(float(d['wind_speed'])/1.60934)+'&winddir='+d['wind_direction']
 			url_wu_2 = url_wu + '&dewpointf='+str(round(dewpointf,3))
 			print(url_wu_2)
-			q = requests.get(url_wu, timeout=10)
+			q = requests.get(url_wu_2, timeout=10)
 			print(q.status_code)
 			#p.log(d['temperature'],d['humidity'],d['wind_direction'],d['wind_speed'],d['rain_mm_day'])
 			#print(p.remaining_bytes, p.cap)
