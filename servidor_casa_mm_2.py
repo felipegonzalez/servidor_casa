@@ -83,7 +83,7 @@ PATH ='/Volumes/mmshared/sonidos'
 path_s ='//homeserver/mmshared/sonidos/'
 ALERT = 'alert4.mp3' 
 LANGUAGE = 'es' # speech language
-texto_1 = "Iniciando sistema"
+
 
 
 #sonos = SoCo(ip_sonos)
@@ -98,7 +98,7 @@ luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7,17],
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
 'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500,'bano_escalera':2000}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':3*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':2*60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
@@ -267,9 +267,10 @@ def monitorCasa():
 
             lugar = myxbees[source]
             
-            #if(lugar=='bano_escalera'):
-            #    print "***** " + lugar
-            #    print(response)
+            if(lugar=='bano_escalera'):
+                print "***** " + lugar
+                print(response)
+
             #if(lugar=='cocina_entrada'):
             #    print(lugar)
             #    print(response)
@@ -280,7 +281,10 @@ def monitorCasa():
                 ocurrencia = procesar_rf(response, st) ## datos de arduino
             if('samples' in response.keys()):
                 ocurrencia = procesar_samples_unif(response, st) # datos de xbee sin arduino 
-
+            if(lugar=='bano_escalera'):
+                print "***** " + lugar
+                print(ocurrencia)
+                
         #######################################################   
             logging.info('Ocurrencia:'+str(ocurrencia))
             # niveles de luz y movimiento, puertas
@@ -590,7 +594,7 @@ def monitorCasa():
                             apagarGrupo(luces['cuarto'])
                             chapa(True, xbee = xbee)
                         else:
-                            sonos.volume=70
+                            sonos.volume=40
                             decir('Hora de despertar')
                             sonos.volume =40
                     if(comando[0]=='luces_cocina' and comando[1]=='1'):
@@ -662,7 +666,19 @@ def monitorCasa():
 
         ## actividades programadas
         if(dormir['cuarto'] and dt.hour==8):
-            decir('Hora de despertar para Teresita y Felipe')
+            print 'Despertador'
+            sonos.stop()
+            sonos.volume = 90
+            #decir('Hora de despertar para Teresita y Felipe.')
+            #time.sleep
+            parte_dia='mañana'
+            if(dt.hour>=12):
+                parte_dia = 'tarde'
+                if(dt.hour>=20):
+                    parte_dia = 'noche'
+            decir('Hora de despertar! Son las '+str(dt.hour)+' con '+str(dt.minute))
+
+            #decir('')
             dormir['cuarto'] = False
 
 
@@ -716,19 +732,19 @@ def monitorCasa():
         ant = tiempos.popleft()
         #time_loop = time.time()
         
-        if((time.time()-log_time) > 10):
+        if((time.time()-log_time) > 20):
             actualizar_global('heartbeat', round(sum(tiempos)/len(tiempos),2), con2)
             print '\033[91m'+'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))+'\033[0m'
             log_time = time.time()
             if(contar_mysql > 0):
                 print "escribir mysql "+str(contar_mysql)+" registros."
                 contar_mysql=0
-            print "Luz, ", niveles_luz
-            print "Temperatura, ", temperaturas
-            print "Humedad", humedades
+            #print "Luz, ", niveles_luz
+            #print "Temperatura, ", temperaturas
+            #print "Humedad", humedades
             #decir('La temperatura es '+str(round(temperaturas['sala']))+' grados')
             print "Movimiento, ", movimiento
-            print "Mov st ", movimiento_st
+            #print "Mov st ", movimiento_st
             print "Globales ", globales
             print " "
             print " "
@@ -814,7 +830,7 @@ def apagarGrupo(grupo):
             final = time.time()
             logging.info('Luces :'+'apagar '+str(luz)+'|' +str(final-inicial))
         except:
-            print "Luces no disponibles para apagar"
+            print "Luces no disponibles para apagar" + str(grupo)
 def encenderGrupo(grupo):
    for luz in grupo:
         try:
@@ -823,7 +839,7 @@ def encenderGrupo(grupo):
             final = time.time()
             logging.info('Luces :'+'encender '+str(luz)+'|'+str(final-inicio))
         except:
-            print "Luces no disponibles para encender"
+            print "Luces no disponibles para encender" + str(grupo)
 
 def apagarTodas(luces):
     for zona in luces:
@@ -846,8 +862,7 @@ def chapa(cerrar, xbee):
         actualizar_global('chapa', 0.0, con2)
 
 def actualizar_global(item,valor, con2):
-    print item
-    print valor
+    
     tstamp = time.time()
     st = datetime.datetime.fromtimestamp(tstamp, tz=tzone).strftime('%Y-%m-%d %H:%M:%S')
 
@@ -934,9 +949,9 @@ def decir(texto):
 
     ok, file_name =  text2mp3(texto, PATH, LANGUAGE, ALERT)
     if ok:
-        zp = SoCo(ip_sonos)
+        #zp = SoCo(ip_sonos)
         print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
-        zp.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
+        sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
         #alertDuration = zp.get_current_track_info()['duration']
         #sleepTime=float(alertDuration)
         #time.sleep(sleepTime)
