@@ -1,10 +1,8 @@
-servidor_casa
+Automatización casera
 =============
 
-Archivos para automatización de casa
-
+Contiene el código de cajas de sensores (arduino) y varios scripts de python para distintas funciones
 
 TODO:
 
-- detectar presencia en casa y/o cuartos individuales
-- 
+
