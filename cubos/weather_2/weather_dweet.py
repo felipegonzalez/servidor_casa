@@ -21,6 +21,9 @@ h.setFormatter(format_logging)
 h.setLevel(logging.DEBUG)
 root_logger.addHandler(h)
 
+inicial_lluvia_hora = 0
+hour_anterior = datetime.datetime.now().hour
+
 url_wunder = 'http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?'
 id_wunder = 'IDISTRIT49' 
 #pass_wunder= 'A34-Qg6-272-6Jq'
@@ -30,6 +33,7 @@ url_1 = url_wunder + 'ID='+id_wunder+'&PASSWORD='+pass_wunder
 #p = phant.Phant("XGvXXOnn1aFKYpJGvV6r", 'temperature','humidity',
 #   'wind_direction','wind_speed','rain_mm_day',private_key = "1J0ggV88qKtMbqDnN64x")
 while(True):
+
     try:
         r = requests.get('http://estacionyun.local/arduino/weather/0', timeout=20)
         print('Dweeting')
@@ -44,6 +48,13 @@ while(True):
             logging.error('Error dweepy')
 
         #weather underground
+        hour_actual = datetime.datetime.now().hour
+        if(hour_actual != hour_anterior):
+            inicial_lluvia_hora = float(d['rain_mm_day'])
+            hour_anterior = hour_actual
+        acumulado_lluvia_hora = float(d['rain_mm_day']) - inicial_lluvia_hora   
+        print 'Acumulado hora lluvia: %s'  % acumulado_lluvia_hora
+        print 'Hora ant %s, actual %s' % (hour_anterior, hour_actual)
         try:
             rh = float(d['humidity'])
             tc = float(d['temperature'])
@@ -53,9 +64,11 @@ while(True):
             #dp = 243.12*h/(17.62-h)
             dewpointf=dp*(9.0/5.0) +32.0
             drainin=(float(d['rain_mm_day'])/10.0)/2.54
-            rainin=(float(d['rain_mm_hour'])/10.0)/2.54
+            rainin=(acumulado_lluvia_hora/10.0)/2.54
             #'&rainin='+str(rainin)+
-            url_wu = url_1 + '&dateutc=now&tempf='+str(float(d['temperature'])*(9.0/5.0)+32.0) +'&humidity='+ d['humidity'] +'&dailyrainin='+str(drainin)+'&windspeedmph='+str(float(d['wind_speed'])/1.60934)+'&winddir='+d['wind_direction']
+            url_wu = url_1 + '&dateutc=now&tempf='+str(float(d['temperature'])*(9.0/5.0)+32.0) +'&humidity='+ d['humidity'] +'&windspeedmph='+str(float(d['wind_speed'])/1.60934)+'&winddir='+d['wind_direction']
+            url_wu = url_wu +'&dailyrainin='+str(drainin)
+            url_wu = url_wu +'&rainin='+str(rainin)
             url_wu_2 = url_wu + '&dewptf='+str(round(dewpointf,3))
             print(url_wu_2)
             dif_secs = -1
