@@ -9,6 +9,7 @@ import logging.handlers
 import math
 import sqlite3 as lite
 import re
+from collections import deque
 
 con = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
 ## logging
@@ -21,8 +22,8 @@ h.setFormatter(format_logging)
 h.setLevel(logging.DEBUG)
 root_logger.addHandler(h)
 
-inicial_lluvia_hora = 0
-hour_anterior = datetime.datetime.now().hour
+acum_lluvia_hora = 0
+cola_lluvia = deque([])
 
 url_wunder = 'http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?'
 id_wunder = 'IDISTRIT49' 
@@ -33,14 +34,34 @@ url_1 = url_wunder + 'ID='+id_wunder+'&PASSWORD='+pass_wunder
 #p = phant.Phant("XGvXXOnn1aFKYpJGvV6r", 'temperature','humidity',
 #   'wind_direction','wind_speed','rain_mm_day',private_key = "1J0ggV88qKtMbqDnN64x")
 while(True):
+    tiempo_actual = time.time()
 
     try:
-        r = requests.get('http://estacionyun.local/arduino/weather/0', timeout=20)
+        r = requests.get('http://estacionyun.local/arduino/weather/0', timeout=10)
         print('Dweeting')
         print(r.text.strip("\r\n"))
         logging.info('Estacion:'+r.text.strip("\r\n"))
         d = json.loads(r.text.strip("\r\n").replace("'", "\""))
         print d
+        dif_reg = False
+        try:
+            cola_lluvia.append((tiempo_actual, float(d['rain_mm_day'])))
+            print "Longitud cola: %s" % len(cola_lluvia)
+            tiempo_inicial = cola_lluvia[0][0]
+            while(tiempo_actual - tiempo_inicial > 60*60):
+                tiempo_inicial = cola_lluvia.popleft()[0]
+                print "Tirar 1 de cola"
+            acum_lluvia_hora  = cola_lluvia[len(cola_lluvia) - 1][1] - cola_lluvia[0][1]
+            dif_reg = True
+            print "Acumulado en hora: %s" % acum_lluvia_hora
+            dif_tiempo = cola_lluvia[len(cola_lluvia) - 1][0] - cola_lluvia[0][0]
+            print "Span de tiempo : %s" % dif_tiempo
+        except:
+            print("error calculo de acumulado")
+            dif_reg = False
+
+
+
         try:
             dweepy.dweet_for('rich-honey', d)
         except:
@@ -48,13 +69,7 @@ while(True):
             logging.error('Error dweepy')
 
         #weather underground
-        hour_actual = datetime.datetime.now().hour
-        if(hour_actual != hour_anterior):
-            inicial_lluvia_hora = float(d['rain_mm_day'])
-            hour_anterior = hour_actual
-        acumulado_lluvia_hora = float(d['rain_mm_day']) - inicial_lluvia_hora   
-        print 'Acumulado hora lluvia: %s'  % acumulado_lluvia_hora
-        print 'Hora ant %s, actual %s' % (hour_anterior, hour_actual)
+
         try:
             rh = float(d['humidity'])
             tc = float(d['temperature'])
@@ -64,11 +79,12 @@ while(True):
             #dp = 243.12*h/(17.62-h)
             dewpointf=dp*(9.0/5.0) +32.0
             drainin=(float(d['rain_mm_day'])/10.0)/2.54
-            rainin=(acumulado_lluvia_hora/10.0)/2.54
+            rainin=(acum_lluvia_hora/10.0)/2.54
             #'&rainin='+str(rainin)+
             url_wu = url_1 + '&dateutc=now&tempf='+str(float(d['temperature'])*(9.0/5.0)+32.0) +'&humidity='+ d['humidity'] +'&windspeedmph='+str(float(d['wind_speed'])/1.60934)+'&winddir='+d['wind_direction']
             url_wu = url_wu +'&dailyrainin='+str(drainin)
-            url_wu = url_wu +'&rainin='+str(rainin)
+            if(dif_reg):
+                url_wu = url_wu +'&rainin='+str(rainin)
             url_wu_2 = url_wu + '&dewptf='+str(round(dewpointf,3))
             print(url_wu_2)
             dif_secs = -1
