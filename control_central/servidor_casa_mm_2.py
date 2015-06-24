@@ -92,7 +92,7 @@ sonos = soco.discover().pop()
 #ip_tere = '192.168.100.7'
 
 # que luces corresponden a cada lugar
-luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1],'puerta':[7,17],
+luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1,18],'puerta':[7,17],
 'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],
 'estudiot':[13],'bano_cuarto':[14,15],'bano_escalera':[16]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
@@ -712,33 +712,18 @@ def monitorCasa():
             print("error registro ultimas")
 
 
-        ## i el lugar le toca registro, actualizar base de datos
-        if 'lugar' in locals() and 'ocurrencia' in locals():
-            if(lugar != 'cocina_entrada'):
-                if((time.time() - tiempos_registro[lugar]) > delay_registro[lugar]):
-                    tiempos_registro[lugar] = time.time()
-                    #try:
-                    
-                    contar_mysql = contar_mysql +1
-                    #escribir_ocurrencia_mysql(ocurrencia, conrds)
-                
-                    #except:
-                    #    print "Error escribir base completa"
-            
-        # datos estados en consola    
-        #print 'tiempo loop', time.time()- tstamp
+
         nuevo_tiempo = time.time() - tstamp
         tiempos.append(nuevo_tiempo)
         ant = tiempos.popleft()
         #time_loop = time.time()
         
         if((time.time()-log_time) > 20):
+            print time.time()-log_time
+            log_time = time.time()
             actualizar_global('heartbeat', round(sum(tiempos)/len(tiempos),2), con2)
             print '\033[91m'+'Media: '+str(round(sum(tiempos)/len(tiempos),2))+'  Max: '+str(round(max(tiempos),2))+'\033[0m'
-            log_time = time.time()
-            if(contar_mysql > 0):
-                print "escribir mysql "+str(contar_mysql)+" registros."
-                contar_mysql=0
+        
             #print "Luz, ", niveles_luz
             #print "Temperatura, ", temperaturas
             #print "Humedad", humedades
@@ -826,7 +811,7 @@ def apagarGrupo(grupo):
     for luz in grupo:
         try:
             inicial = time.time()
-            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payoff, timeout=0.2)
+            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payoff, timeout=0.5)
             final = time.time()
             logging.info('Luces :'+'apagar '+str(luz)+'|' +str(final-inicial))
         except:
@@ -835,7 +820,7 @@ def encenderGrupo(grupo):
    for luz in grupo:
         try:
             inicial = time.time()
-            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.2)
+            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.5)
             final = time.time()
             logging.info('Luces :'+'encender '+str(luz)+'|'+str(final-inicio))
         except:
