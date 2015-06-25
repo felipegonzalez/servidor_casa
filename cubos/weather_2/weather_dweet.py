@@ -25,6 +25,8 @@ root_logger.addHandler(h)
 acum_lluvia_hora = 0
 cola_lluvia = deque([])
 
+hora_anterior = datetime.datetime.now().hour
+
 url_wunder = 'http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?'
 id_wunder = 'IDISTRIT49' 
 #pass_wunder= 'A34-Qg6-272-6Jq'
@@ -35,6 +37,7 @@ url_1 = url_wunder + 'ID='+id_wunder+'&PASSWORD='+pass_wunder
 #   'wind_direction','wind_speed','rain_mm_day',private_key = "1J0ggV88qKtMbqDnN64x")
 while(True):
     tiempo_actual = time.time()
+    hora_actual = datetime.datetime.now().hour
 
     try:
         r = requests.get('http://estacionyun.local/arduino/weather/0', timeout=10)
@@ -45,6 +48,12 @@ while(True):
         print d
         dif_reg = False
         try:
+            if(hora_actual==0 and hora_anterior==23):
+                hora_anterior = hora_actual
+                ultmedicion = cola_lluvia[len(cola_lluvia)-1]
+                for i in range(len(cola_lluvia)):
+                    cola_lluvia[i] = cola_lluvia[i] - ultmedicion
+
             cola_lluvia.append((tiempo_actual, float(d['rain_mm_day'])))
             print "Longitud cola: %s" % len(cola_lluvia)
             tiempo_inicial = cola_lluvia[0][0]
