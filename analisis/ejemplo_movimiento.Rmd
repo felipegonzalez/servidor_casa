@@ -12,7 +12,7 @@ library(lubridate)
 library(ggplot2)
 ```
 
-La mayoría son datos de sensores PIR de movimiento. lugar = ubicación del sensor,
+La mayoría son datos de sensores PIaiR de movimiento. lugar = ubicación del sensor,
 tstamp: momento de medición en formato %Y-%m-%d %H:%M:%S, evento_num = id secuencial. 
 
 ```{r}
