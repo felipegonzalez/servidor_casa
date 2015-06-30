@@ -733,7 +733,6 @@ def monitorCasa():
             print "Globales ", globales
             print " "
             print " "
-            #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
 
 
 

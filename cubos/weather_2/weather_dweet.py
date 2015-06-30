@@ -95,7 +95,7 @@ while(True):
             if(dif_reg):
                 url_wu = url_wu +'&rainin='+str(rainin)
             url_wu_2 = url_wu + '&dewptf='+str(round(dewpointf,3))
-            print(url_wu_2)
+            #print(url_wu_2)
             dif_secs = -1
             with con:
                 cur = con.cursor()
@@ -124,6 +124,7 @@ while(True):
             if(dif_secs < 60*10 and dif_secs>0):
                 url_wu_2 = url_wu_2 + '&baromin='+str(medicion_inHg)
             print(url_wu_2)
+            logging.info('wunderground:'+url_wu_2)
             q = requests.get(url_wu_2, timeout=10)  
             print(q.status_code)
  
