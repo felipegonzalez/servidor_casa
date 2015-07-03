@@ -547,7 +547,8 @@ def monitorCasa():
                     if(comando[0]=='abrir_garage'):
                         print "Abriendo garage"
                         try:
-                            r = requests.post('http://192.168.100.19:8090/garage')
+                            #r = requests.post('http://192.168.100.19:8090/garage')
+                            r = requests.post('http://beaglebone.local:8090/garage')
                         except:
                             print "Error: Garage no disponible"
                         movimiento['entrada'] = True
