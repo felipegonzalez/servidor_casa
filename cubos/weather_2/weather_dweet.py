@@ -25,7 +25,7 @@ root_logger.addHandler(h)
 acum_lluvia_hora = 0
 cola_lluvia = deque([])
 
-hora_anterior = datetime.datetime.now().hour
+#hora_anterior = datetime.datetime.now().hour
 
 url_wunder = 'http://weatherstation.wunderground.com/weatherstation/updateweatherstation.php?'
 id_wunder = 'IDISTRIT49' 
@@ -48,13 +48,23 @@ while(True):
         print d
         dif_reg = False
         try:
-            if(hora_actual==0 and hora_anterior==23):
-                hora_anterior = hora_actual
-                ultmedicion = cola_lluvia[len(cola_lluvia)-1]
-                for i in range(len(cola_lluvia)):
-                    cola_lluvia[i] = cola_lluvia[i] - ultmedicion
+            #if(hora_actual==0 and hora_anterior==23):
+            #    hora_anterior = hora_actual
+                #ultmedicion = cola_lluvia[len(cola_lluvia)-1]
+                #for i in range(len(cola_lluvia)):
+                #    cola_lluvia[i] = cola_lluvia[i] - ultmedicion
+            
+            cola_lluvia.append((tiempo_actual, float(d['rain_mm_day'])))
+            if(len(cola_lluvia)>1):
+                if(cola_lluvia[-1]==0 and cola_lluvia[-2]>0):
+                    #hubo un reset de medicion de lluvia
+                    ultmedicion = cola_lluvia[-2]
+                    for i in range(len(cola_lluvia)):
+                        cola_lluvia[i] = cola_lluvia[i] - ultmedicion
+                    cola_lluvia[-1] = 0
 
             cola_lluvia.append((tiempo_actual, float(d['rain_mm_day'])))
+
             print "Longitud cola: %s" % len(cola_lluvia)
             tiempo_inicial = cola_lluvia[0][0]
             while(tiempo_actual - tiempo_inicial > 60*60):
@@ -71,11 +81,11 @@ while(True):
 
 
 
-        try:
-            dweepy.dweet_for('rich-honey', d)
-        except:
-            print("error dweepy")
-            logging.error('Error dweepy')
+        #try:
+        #    dweepy.dweet_for('rich-honey', d)
+        #except:
+        #    print("error dweepy")
+        #    logging.error('Error dweepy')
 
         #weather underground
 
