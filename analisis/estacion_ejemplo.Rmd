@@ -1,0 +1,60 @@
+---
+title: "estacion_ejemplo"
+author: "FG"
+date: "June 29, 2015"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+estacion <- readRDS('./datos/datos_estacion.rds')
+estacion$datetime <- as.POSIXct(estacion$datetime)
+estacion <- filter(estacion, !is.na(rain_mm_hour))
+nrow(estacion)
+head(estacion)
+## no usar estas dos variables por el momento
+#estacion$rain_mm_day <- NULL
+#estacion$rain_mm_hour <- NULL
+```
+
+- temperature: temperatura en grados C
+- humidity: humedad en %
+- wind_direction: dirección del viento en grados
+- wind_speed: velocidad de viento (km/h)
+
+```{r}
+estacion_temp <- estacion %>% 
+  dplyr::select(datetime, temperature, humidity) %>%
+  gather(medicion, valor, temperature:humidity)
+ggplot(estacion_temp, aes(x=datetime, y=valor)) + geom_point() + facet_wrap(~medicion, ncol=1, scales = 'free_y')
+ggplot(estacion, aes(x=temperature, y=humidity)) + geom_point(alpha=0.2)
+```
+
+
+```{r}
+ggplot(estacion, aes(x=datetime, y=wind_speed))+ geom_point()
+```
+
+
+```{r}
+ggplot(estacion, aes(x=wind_speed)) + geom_histogram()
+ggplot(estacion, aes(x=wind_direction)) + geom_histogram()
+```
+
+```{r}
+dat_1 <- estacion[estacion$wind_speed > 5, ]
+ggplot(dat_1, aes(x=wind_direction)) + geom_histogram()
+```
+
+```{r}
+dat_29 <- filter(estacion, day(datetime)==29, hour(datetime)>12)
+dat_29$ws0 <- dat_29$wind_speed==0
+ggplot(dat_29, aes(x=datetime, y=wind_direction, alpha=wind_speed)) + geom_point() 
+```
+
+
+
+
