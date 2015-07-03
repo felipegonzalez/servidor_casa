@@ -101,8 +101,8 @@ delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':
     'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':2*60}
 
 # los que tienen cero envían datos según pausas
-delay_registro = {'escalera':2, 'sala':2, 'tv':2, 'estudiof':2, 'puerta':2, 'vestidor':2, 
-'cocina':2,'cuarto':2,'entrada':20,'estudiot':2,'bano_cuarto':2,'bano_escalera':2}
+delay_registro = {'escalera':60, 'sala':60, 'tv':60, 'estudiof':60, 'puerta':10, 'vestidor':60, 
+'cocina':60,'cuarto':60,'entrada':10,'estudiot':60,'bano_cuarto':60,'bano_escalera':60}
 
 # inicializar
 estado_luces={}
