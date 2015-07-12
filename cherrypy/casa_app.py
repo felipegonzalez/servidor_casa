@@ -115,7 +115,7 @@ class infoBasica(object):
         con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
         with con2:
             cur = con2.cursor()
-            commandx = "SELECT timestamp, medicion, valor from Status WHERE lugar = 'global'  OR (lugar='tv' AND medicion='temperature') "
+            commandx = "SELECT timestamp, medicion, valor from Status WHERE lugar = 'global'" # OR (lugar='tv' AND medicion='temperature') "
             #commandx = "SELECT timestamp,medicion,valor,lugar from Status  ORDER BY lugar, medicion "
             res = cur.execute(commandx)
         tabla = HTML.table(res).split('\n')
@@ -181,9 +181,17 @@ if __name__ == '__main__':
 		'tools.staticfile.on' : True,
 		'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/css/bootstrap.min.css"
         },
+        '/dist/jquery/jquery-2.0.3.min.js': {
+        'tools.staticfile.on' : True,
+        'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/jquery/jquery-2.0.3.min.js"
+        },
         '/dist/app.js':{
             'tools.staticfile.on' : True,
             'tools.staticfile.filename' : "/Users/felipe/servidor_casa/cherrypy/dist/app.js"
+        },
+        '/img':{
+            'tools.staticdir.on' : True,
+            'tools.staticdir.dir' : "/Users/felipe/servidor_casa/cherrypy/img"
         }
 }
     webapp = control()
