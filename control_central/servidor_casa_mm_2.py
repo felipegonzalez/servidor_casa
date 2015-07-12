@@ -27,7 +27,7 @@ import dweepy
 import MySQLdb 
 import cPickle
 from collections import deque
-
+import redis
 ##logging
 format_logging = logging.Formatter(fmt='%(levelname)s|%(asctime)s|%(name)s| %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
 h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/casa_monitor.log', encoding='utf8',
@@ -101,9 +101,9 @@ delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':
     'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':2*60}
 
 # los que tienen cero envían datos según pausas
-delay_registro = {'escalera':60, 'sala':60, 'tv':60, 'estudiof':60, 'puerta':10, 'vestidor':60, 
+delay_registro = {'escalera':60, 'sala':60, 'tv':60, 'estudiof':60, 'puerta':60, 'vestidor':60, 
 'cocina':60,'cuarto':60,'entrada':10,'estudiot':60,'bano_cuarto':60,'bano_escalera':60}
-
+delay_pressure = 10
 # inicializar
 estado_luces={}
 movimiento={}
@@ -142,6 +142,7 @@ con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
 conlocal = lite.connect('/Volumes/mmshared/bdatos/temp_monitor.db')
 conrds = MySQLdb.connect(host='localhost', user = 'felipe', db='casa')
 con_dweet= lite.connect('/Volumes/mmshared/bdatos/to_dweet.db')
+redis_q = redis.Redis()
 
 def monitorCasa():
     print("Iniciando....")
@@ -205,6 +206,8 @@ def monitorCasa():
         movimiento_st[lugar] = 0.0
         estado_luces[lugar] = False
         tiempo_encendido[lugar] = 0
+
+    tiempo_pressure = time.time()
     
     for key in tiempos_registro:
         tiempos_registro[key] = time.time()
@@ -247,8 +250,9 @@ def monitorCasa():
                     if(key=='cocina'):
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     else:
-                        apagarGrupo(luces[key])
-                    estado_luces[key] = False
+                        if(key!='entrada'):
+                            apagarGrupo(luces[key])
+                            estado_luces[key] = False
                     
 
 
@@ -707,8 +711,16 @@ def monitorCasa():
                 #print ocurrencia
                 if 'ocurrencia' in locals():
                     for item in ocurrencia:
+                        #pass
                         #print(item)
                         update_ultimas(item, con2, str(st))
+            if 'ocurrencia' in locals():
+                for item in ocurrencia:
+                    if item[3] == 'pressure':
+                        if(time.time()-tiempo_pressure > delay_pressure):
+                            update_ultimas(item, con2, str(st))
+                            tiempo_pressure=time.time()
+
         except:
             print("error registro ultimas")
 
@@ -741,15 +753,15 @@ def monitorCasa():
 ##############################################################################
 def save_dweet(thing, obj):
     #print "Saving dweets"
-    
-    with con_dweet:
-        curr_d = con_dweet.cursor()
-        pdata = cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL)
-        st_command="insert into dweets (thing, dweet) values ("+thing+",:data)"
-        curr_d.execute("insert into dweets (thing, dweet) values (?,?)", [thing,lite.Binary(pdata)])
-    #except:
-    #    "error al escribir a base de dweets"
+    pdata = cPickle.dumps((thing, obj), cPickle.HIGHEST_PROTOCOL)
+    redis_q.rpush('queue', pdata)
 
+    #with con_dweet:
+    #    curr_d = con_dweet.cursor()
+    #    pdata = cPickle.dumps(obj, cPickle.HIGHEST_PROTOCOL)
+    #    st_command="insert into dweets (thing, dweet) values ("+thing+",:data)"
+    #    curr_d.execute("insert into dweets (thing, dweet) values (?,?)", [thing,lite.Binary(pdata)])
+   
 
 
 
