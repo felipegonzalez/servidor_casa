@@ -47,7 +47,7 @@ tiempos = deque([0.0,0.0,0.0,0.0,0.0])
 tzone = pytz.timezone('America/Mexico_City')
 ## Definir xbees, luces
 lugares = ['escalera','sala','tv','puerta','estudiof','vestidor',
-'cocina','cuarto','entrada','estudiot','bano_cuarto','bano_escalera']
+'cocina','cuarto','entrada','estudiot','bano_cuarto','bano_escalera','casa','patio']
 
 myxbees = {
     '0013a20040bf05de':'escalera', 
@@ -62,7 +62,9 @@ myxbees = {
     '0013a20040be4592':'estudiot',
     '0013a20040c2833b':'bano_cuarto',
     '0013a20040caaddc':'bano_escalera',
-    '0013a20040c46287':'estudiof' ## este es el sensor de aire.
+    '0013a20040c46287':'estudiof', ## este es el sensor de aire.
+    '0013a20040c4605b':'casa',
+    '0013a20040caadda':'patio'
     }
 
 #lugares_xbee = {}
@@ -94,15 +96,16 @@ sonos = soco.discover().pop()
 # que luces corresponden a cada lugar
 luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1,18],'puerta':[7,17],
 'estudiof':[12],'vestidor':[8],'entrada':[9,10],'cuarto':[11],
-'estudiot':[13],'bano_cuarto':[14,15],'bano_escalera':[16]}
+'estudiot':[13],'bano_cuarto':[14,15],'bano_escalera':[16],'casa':[], 'patio':[]}
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
 'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500,'bano_escalera':2000}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,'bano_escalera':2*60}
+    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,
+    'bano_escalera':2*60,'casa':10000000, 'patio':60}
 
 # los que tienen cero envían datos según pausas
 delay_registro = {'escalera':60, 'sala':60, 'tv':60, 'estudiof':60, 'puerta':60, 'vestidor':60, 
-'cocina':60,'cuarto':60,'entrada':10,'estudiot':60,'bano_cuarto':60,'bano_escalera':60}
+'cocina':60,'cuarto':60,'entrada':10,'estudiot':60,'bano_cuarto':60,'bano_escalera':60,'casa':60,'patio':60}
 delay_pressure = 10
 # inicializar
 estado_luces={}
@@ -128,7 +131,8 @@ puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 # atributos globales de la casa, alarma enviasa es un flag si ya mandó mensaje
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'auto_ac':True, 'felipe':False, 'tere':False, 
-    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False,'auto_luces':True}
+    'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False,
+    'auto_luces':True, 'mA':0.0}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
@@ -299,6 +303,11 @@ def monitorCasa():
                     lugar_i = item[2]
                     valor_i = item[6]
                     ## actualizar lecturas de luz
+                    if(sensor_i=='ct'):
+                        if(item[4]=='A'):
+                            #print "Amperes " + str(valor_i)
+                            globales['mA'] = str(int(1000*float(valor_i)))
+                            actualizar_global('amperes', float(valor_i), con2)
                     if(sensor_i=='dust_density'):
                         print("***************")
                         print(ocurrencia)
@@ -312,6 +321,7 @@ def monitorCasa():
                             print "Error float luz"
                     # actualizar movimiento
                     if(sensor_i == 'pir'):
+                        movimiento['casa'] == True
                         mov = movimiento[lugar_i]
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
                     if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
@@ -623,6 +633,19 @@ def monitorCasa():
                         print "Abrir chapa"
                         chapa(False, xbee = xbee)
 
+                    if(comando[0]=='regar' and comando[1]=='1'):
+                        #print "Regar" #'0013a20040caadda'
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x05')
+                        globales['regadora'] = True
+                        actualizar_global('regadora', int(globales['regadora']), con2)
+
+                    if(comando[0]=='regar' and comando[1]=='0'):
+                        #print "no regar"
+                        xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x04')
+                        globales['regadora'] = False
+                        actualizar_global('regadora', int(globales['regadora']), con2)
+
+
                     if(comando[0]=='auto_luces'):
                         print("Autoluz toggle")
                         #globales['activo'] = not globales['activo']
@@ -713,15 +736,17 @@ def monitorCasa():
                     for item in ocurrencia:
                         #pass
                         #print(item)
+                        #print item
                         update_ultimas(item, con2, str(st))
             if 'ocurrencia' in locals():
                 for item in ocurrencia:
                     if item[3] == 'pressure':
+                       # print "Pressure"
                         if(time.time()-tiempo_pressure > delay_pressure):
                             update_ultimas(item, con2, str(st))
                             tiempo_pressure=time.time()
 
-        except:
+        except ValueError:
             print("error registro ultimas")
 
 
@@ -867,7 +892,7 @@ def actualizar_global(item,valor, con2):
         with con2:
             cur2 = con2.cursor()
             command1 = "UPDATE status SET valor ="+str(valor)+", timestamp='"+str(st) +"' WHERE lugar='global' AND medicion= '"+item+"' AND no_sensor=1"
-            print command1
+            #print command1
             cur2.execute(command1)
     except:
         print "Error sqlite globales ultimas"
