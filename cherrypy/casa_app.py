@@ -79,6 +79,20 @@ class control(object):
             cur.execute(commandx)
         return mensaje
 
+    @cherrypy.expose
+    def regar(self, sw):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            if(sw=='1'):
+                commandx = "INSERT INTO pendientes VALUES('regar','1')"
+                mensaje ='Regar patio'
+            if(sw=='0'):
+                commandx = "INSERT INTO pendientes VALUES('regar','0')"
+                mensaje = 'Dejar de regar patio'
+            cur.execute(commandx)
+        return mensaje
+
 
     @cherrypy.expose
     def dormir(self):
@@ -115,7 +129,7 @@ class infoBasica(object):
         con2 = lite.connect('/Volumes/mmshared/bdatos/ultimas.db')
         with con2:
             cur = con2.cursor()
-            commandx = "SELECT timestamp, medicion, valor from Status WHERE lugar = 'global'" # OR (lugar='tv' AND medicion='temperature') "
+            commandx = "SELECT timestamp, medicion, valor from Status WHERE lugar = 'global' ORDER BY medicion" # OR (lugar='tv' AND medicion='temperature') "
             #commandx = "SELECT timestamp,medicion,valor,lugar from Status  ORDER BY lugar, medicion "
             res = cur.execute(commandx)
         tabla = HTML.table(res).split('\n')

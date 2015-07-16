@@ -74,9 +74,6 @@
             e.preventDefault();
            setTimeout(function(){location.reload()}, 2000);
          });
-
-
-
         $("#unlock-a").click(function(e) {
            $.post("/chapa/0", {}).done(function(string) {
                $("#respuesta input").val(string);
@@ -84,6 +81,22 @@
            e.preventDefault();
            setTimeout(function(){location.reload()}, 2000);
          });
+        $("#regar-on").click(function(e) {
+           $.post("/regar/1", {}).done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+           setTimeout(function(){location.reload()}, 2000);
+         });
+        $("#regar-off").click(function(e) {   
+         $.post("/regar/0", {}).done(function(string) {
+               $("#respuesta input").val(string);
+            }); 
+            e.preventDefault();
+           setTimeout(function(){location.reload()}, 2000);
+         });
+
+
      
         $("#luces-cocina").click(function(e) {
            $.post("/lucescocina", {})
