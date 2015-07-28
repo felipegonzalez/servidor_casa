@@ -254,9 +254,8 @@ def monitorCasa():
                     if(key=='cocina'):
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     else:
-                        if(key!='entrada'):
-                            apagarGrupo(luces[key])
-                            estado_luces[key] = False
+                        apagarGrupo(luces[key])
+                        estado_luces[key] = False
                     
 
 
@@ -308,6 +307,9 @@ def monitorCasa():
                             #print "Amperes " + str(valor_i)
                             globales['mA'] = str(int(1000*float(valor_i)))
                             actualizar_global('amperes', float(valor_i), con2)
+                        if(item[4]=='kW'):
+                            actualizar_global('kW', float(valor_i), con2)
+                            globales['W'] = str(int(1000*float(valor_i)))
                     if(sensor_i=='dust_density'):
                         print("***************")
                         print(ocurrencia)
@@ -403,11 +405,12 @@ def monitorCasa():
             try:
                 check_lights_time = time.time()
                 r_state = requests.get(ip_hue+'lights/', timeout=0.1)
-                rs = r_state.json()
-                for key in rs:
-                    estado_hue[rs[key]['name']] = rs[key]['state']['on']
-                #print estado_hue
-                logging.info('Estado luces: '+str(estado_hue))
+                if(r_state.status_code == 200):
+                    rs = r_state.json()
+                    for key in rs:
+                        estado_hue[rs[key]['name']] = rs[key]['state']['on']
+                    #print estado_hue
+                    logging.info('Estado luces: '+str(estado_hue))
             except:
                 logging.error('Error getting light states')
 
@@ -746,7 +749,7 @@ def monitorCasa():
                             update_ultimas(item, con2, str(st))
                             tiempo_pressure=time.time()
 
-        except ValueError:
+        except:
             print("error registro ultimas")
 
 
