@@ -12,7 +12,7 @@ def uploadDweet():
     time_d = time.time()
 
     while(True):
-        if(time.time()-time_d > 20):
+        if(time.time()-time_d > 5):
             print "Sending data, " + str(time.time())
             time_d = time.time()
             while (redis_q.llen('queue') > 0):
@@ -26,6 +26,7 @@ def uploadDweet():
                     dweepy.dweet_for(thing, data)
                 except:
                     print "Error dweepy"
+            print "cleared queue"
             #with con_dweet:
             #    c = con_dweet.cursor()
             #    c.execute('SELECT * FROM dweets')
