@@ -131,7 +131,7 @@ while(True):
                 #print(req_bar)
                 #time.sleep(4)
             
-            if(dif_secs < 60*10 and dif_secs>0):
+            if(dif_secs < 60*30 and dif_secs>0):
                 url_wu_2 = url_wu_2 + '&baromin='+str(medicion_inHg)
             print(url_wu_2)
             logging.info('wunderground:'+url_wu_2)

@@ -607,9 +607,14 @@ def monitorCasa():
                     if(comando[0]=='dormir'):
                         dormir['cuarto'] = not dormir['cuarto']
                         if(dormir['cuarto']):
+                            print "vol"
                             sonos.volume = 30
+                            print "decir"
+
                             decir('Listo para dormir')
+                            print "apagar"
                             apagarGrupo(luces['cuarto'])
+                            print "cerrar chapa"
                             chapa(True, xbee = xbee)
                         else:
                             sonos.volume=40
@@ -637,13 +642,13 @@ def monitorCasa():
                         chapa(False, xbee = xbee)
 
                     if(comando[0]=='regar' and comando[1]=='1'):
-                        #print "Regar" #'0013a20040caadda'
+                        print "Regar" #'0013a20040caadda'
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x05')
                         globales['regadora'] = True
                         actualizar_global('regadora', int(globales['regadora']), con2)
 
                     if(comando[0]=='regar' and comando[1]=='0'):
-                        #print "no regar"
+                        print "no regar"
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x04')
                         globales['regadora'] = False
                         actualizar_global('regadora', int(globales['regadora']), con2)
@@ -699,7 +704,7 @@ def monitorCasa():
         if(dormir['cuarto'] and dt.hour==8):
             print 'Despertador'
             sonos.stop()
-            sonos.volume = 90
+            sonos.volume = 40
             #decir('Hora de despertar para Teresita y Felipe.')
             #time.sleep
             parte_dia='mañana'
@@ -971,22 +976,25 @@ def decir(texto):
     #sonos.play_uri(alertSoundURL)
     
 
+    try:
+        ok, file_name =  text2mp3(texto, PATH, LANGUAGE, ALERT)
 
-    ok, file_name =  text2mp3(texto, PATH, LANGUAGE, ALERT)
-    if ok:
-        #zp = SoCo(ip_sonos)
-        print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
-        sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
-        #alertDuration = zp.get_current_track_info()['duration']
-        #sleepTime=float(alertDuration)
-        #time.sleep(sleepTime)
-        #if len(zp.get_queue()) > 0 and playlistPos > 0:
-        #    print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
-        #    zp.play_from_queue(playlistPos)
-        #    zp.seek(trackPos)
-        #else:
-        #    print 'Resuming %s' % mediaURI
-         #   zp.play_uri(mediaURI, mediaMeta)
+        if ok:
+            #zp = SoCo(ip_sonos)
+            print('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
+            sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/speech.mp3')
+            #alertDuration = zp.get_current_track_info()['duration']
+            #sleepTime=float(alertDuration)
+            #time.sleep(sleepTime)
+            #if len(zp.get_queue()) > 0 and playlistPos > 0:
+            #    print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
+            #    zp.play_from_queue(playlistPos)
+            #    zp.seek(trackPos)
+            #else:
+            #    print 'Resuming %s' % mediaURI
+             #   zp.play_uri(mediaURI, mediaMeta)
+    except:
+        print "Error text2speech"
 
 
 def decir2(texto):
