@@ -1,0 +1,78 @@
+<!DOCTYPE html> <head>
+   <meta charset="utf-8">
+    <title>Jardín hidropónico</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="src/d3.v3.min.js"></script>
+	<script src="src/jquery-2.1.4.min.js"></script>
+	<script src="src/plotly.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+<script>
+
+$(document).ready(function(){
+	var ph_serie=[4,2,1,6];
+	var ts_serie=[''];
+	TESTER = document.getElementById('ph');
+	TESTER2 = document.getElementById('flow');
+        $.get("dat_ph", {}).done(function(res){
+	    ph_serie = JSON.parse(res).data_ph
+	    ts_serie = JSON.parse(res).time
+	    flow_serie = JSON.parse(res).data_flow
+            //$("#datos").append(ph_serie);
+//var xval = [];
+//for(var i = 1; i<=20; i++){ xval.push(i)};
+
+Plotly.plot( TESTER, [{
+	x: ts_serie,
+	y: ph_serie }], {
+	margin: { t: 20 }, yaxis: {range: [4,7.5] , dtick: 1.0}, title: "pH", titlefont:{size:14}} );
+
+Plotly.plot( TESTER2, [{
+	x: ts_serie,
+	y: flow_serie }], {
+	margin: { t: 20 }, yaxis: { dtick: 5}, title: "Flujo (litros x minuto)", titlefont:{size:14}} );
+
+        });
+
+
+	})
+
+
+$(document).ready(function() {         
+         $.get("/cuerpo", {})
+         .done(function(string){
+            $("#cuerpo").append(string);
+         });})
+$(document).ready(function(){
+	$.get("/imagen", {})
+	.done(function(string){
+	   $("#imagen").append(string);
+	});
+})
+</script>
+
+</head>
+<body>
+<div class ="container">
+<div class="page-header">
+<h3> Jardín hidropónico </h3>
+<p id="cuerpo" class="lead"> </p>
+<p> El pH del agua se mide con el sensor construido según <a href="ttps://www.sparkyswidgets.com/portfolio-item/ph-probe-interface/https://www.sparkyswidgets.com/portfolio-item/ph-probe-interface/"> estas instrucciones, </a> 
+usando esta   
+<a href="http://americanmarineusa.com/products/pinpoint-ph-replacement-probe">sonda de pH.</a>
+El flujo de agua en el sistema se mide con este <a href="https://www.adafruit.com/products/828"> sensor de flujo. </a>
+    El sistema incluye una raspberry pi con cámara y un servidor web, 
+y un radio xbee que se comunica con un arduino + xbee desde donde se toman las mediciones. 
+</p>
+</div>
+
+<div id="datos"></div>
+ <div id="ph" style="height:200px;"></div>     
+ <div id="flow" style="height:200px;"></div>     
+       <div id="imagen"></div>
+</div>
+
+</body>
+
+
+</html>
