@@ -28,6 +28,14 @@ import MySQLdb
 import cPickle
 from collections import deque
 import redis
+import os
+print os.environ['HOME']
+
+# using get will return `None` if a key is not present rather than raise a `KeyError`
+pb_key = os.environ.get('PB_TOKEN')
+pb_api_key = os.environ.get('PB_API_TOKEN')
+
+
 ##logging
 format_logging = logging.Formatter(fmt='%(levelname)s|%(asctime)s|%(name)s| %(message)s ', datefmt="%Y-%m-%d %H:%M:%S")
 h = logging.handlers.TimedRotatingFileHandler('/Volumes/mmshared/bdatos/log/monitor/casa_monitor.log', encoding='utf8',
@@ -151,11 +159,9 @@ redis_q = redis.Redis()
 def monitorCasa():
     print("Iniciando....")
     logging.info('Starting')
-    #pb = PushBullet('v1PIC2OwXdaK1aw49OTrNflD3jlpZZdrpPujy4CMcLNi8')
     print("conectando pushbullet")
-    po_client = Client("upTSkha71ovvG3Q3KSp68VAZRUwx4h", api_token="aeWBgVcie7cwVm2UrWFsTUa52XdezD")
+    po_client = Client(pb_key, api_token = pb_api_key)
 
-    #po_client_tere = Client("uF7p3ueWbwbhD9c8xer4QLukbWoppT", api_token="")
 
     #resetear alarma
     globales['alarma'] = False
