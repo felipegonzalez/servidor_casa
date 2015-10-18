@@ -397,10 +397,14 @@ def monitorCasa():
                     ## checar gas
                     if(sensor_i =='gaslpg'):
                         gas[lugar_i] = valor_i
-                        if(float(valor_i) > 500):
-                            globales['alarma_gas'] = True
-                            lugar_gas = lugar_i
-                            lectura = valor_i
+                        try:
+                            if(float(valor_i) > 500):
+                                globales['alarma_gas'] = True
+                                lugar_gas = lugar_i
+                                lectura = valor_i
+                        except:
+                            logging.error('Error float gas')
+
 
 
         ######### checar luces ########
@@ -512,10 +516,10 @@ def monitorCasa():
             po_client.send_message("Alarma de gas en "+lugar_gas+", lectura: " + lectura, title="Alarma gas")
             globales['alarma_gas_enviada'] = True
             try:
-                sonos.volume = 90
-                decir('Alarma de gas en ' + lugar_gas)
-                time.sleep(8)
-                decir('Alarma de gas en ' + lugar_gas)
+                sonos.volume = 80
+                texto_voz('Alarma de gas en ' + lugar_gas)
+                #time.sleep(8)
+                #decir('Alarma de gas en ' + lugar_gas)
                 sonos.volume = 40
             except:
                 print "Error decir alarma de gas"
@@ -617,14 +621,14 @@ def monitorCasa():
                             sonos.volume = 30
                             print "decir"
 
-                            decir('Listo para dormir')
+                            texto_voz('Listo para dormir')
                             print "apagar"
                             apagarGrupo(luces['cuarto'])
                             print "cerrar chapa"
                             chapa(True, xbee = xbee)
                         else:
                             sonos.volume=40
-                            decir('Hora de despertar')
+                            texto_voz('Hora de despertar')
                             sonos.volume =40
                     if(comando[0]=='luces_cocina' and comando[1]=='1'):
                         #print "Prender cocina"
@@ -711,14 +715,14 @@ def monitorCasa():
             print 'Despertador'
             sonos.stop()
             sonos.volume = 40
-            #decir('Hora de despertar para Teresita y Felipe.')
+            
             #time.sleep
             parte_dia='mañana'
             if(dt.hour>=12):
                 parte_dia = 'tarde'
                 if(dt.hour>=20):
                     parte_dia = 'noche'
-            decir('Hora de despertar! Son las '+str(dt.hour)+' con '+str(dt.minute))
+            texto_voz('Hora de despertar! Son las '+str(dt.hour)+' con '+str(dt.minute))
 
             #decir('')
             dormir['cuarto'] = False
@@ -964,6 +968,13 @@ def tocar(archivo):
 
     except:
         print "Error sonos"
+
+def texto_voz(texto):
+    try:
+        os.system("say -v Paulina '"+texto+"' -o "+"/Volumes/mmshared/sonidos/voz.mp4")
+        sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/voz.mp4')
+    except:
+        print "Error say!"
 
 
 def decir(texto):
