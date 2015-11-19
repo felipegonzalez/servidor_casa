@@ -107,6 +107,30 @@
            e.preventDefault();
          });
 
+        $("#llegar-caminando").click(function(e){
+          $.post("/zumbador", {})
+            .done(function(string) {
+            });
+          $.post("/chapa/0", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+
+            });
+           e.preventDefault();
+        });
+
+        $("#llegar-coche").click(function(e){
+          $.post("/garage", {})
+            .done(function(string) {
+            });
+          $.post("/chapa/0", {})
+            .done(function(string) {
+               $("#respuesta input").val(string);
+
+            });
+           e.preventDefault();
+        });
+
         $("#apagar-cocina").click(function(e) {
            $.post("/apagarcocina", {})
             .done(function(string) {
