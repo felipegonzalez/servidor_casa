@@ -108,7 +108,7 @@ luces = {'escalera':[6], 'sala':[3,4,5], 'tv':[1,18],'puerta':[7,17],
 nivel_encendido= {'escalera':2000,'sala':300, 'tv':300, 'puerta':700,'estudiof':730,'vestidor':900,
 'cocina':800,'cuarto':600, 'entrada':700,'estudiot':700,'bano_cuarto':500,'bano_escalera':2000}
 delay_luces_l = {'tv':6*60, 'sala':4*60, 'puerta':60, 'escalera':40, 'estudiof':4*60,'vestidor':4*60,
-    'cocina':3*60,'cuarto':5*60,'entrada':3*60,'estudiot':4*60,'bano_cuarto':3*60,
+    'cocina':3*60,'cuarto':7*60,'entrada':4*60,'estudiot':6*60,'bano_cuarto':3*60,
     'bano_escalera':2*60,'casa':10000000, 'patio':60}
 
 # los que tienen cero envían datos según pausas
@@ -122,12 +122,19 @@ niveles_luz={}
 tiempo_movimiento={}
 dormir = {}
 movimiento_st={}
+
+movimiento_tv_st  = {'1':0, '2':0}
+ocupacion = {}
+
 for lugar in lugares:
     estado_luces[lugar] = False
     movimiento[lugar] = False
     niveles_luz[lugar] = 1000
     tiempo_movimiento[lugar] = 0
     dormir[lugar] = False
+    ocupacion[lugar] = 0
+ocupacion['tv'] = 0
+
 niveles_luz['bano_escalera'] = 0
 anterior = time.time()
 
@@ -161,6 +168,7 @@ def monitorCasa():
     logging.info('Starting')
     print("conectando pushbullet")
     po_client = Client(pb_key, api_token = pb_api_key)
+    previo_no_tv='0'
 
 
     #resetear alarma
@@ -260,8 +268,9 @@ def monitorCasa():
                     if(key=='cocina'):
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     else:
-                        apagarGrupo(luces[key])
-                        estado_luces[key] = False
+                        if(ocupacion[key]==0):
+                            apagarGrupo(luces[key])
+                            estado_luces[key] = False
                     
 
 
@@ -332,10 +341,23 @@ def monitorCasa():
                         movimiento['casa'] == True
                         mov = movimiento[lugar_i]
                         movimiento[lugar_i] = (valor_i=='1') or mov ## para más de un pir en un mismo lugar
+                        if(lugar_i=='tv' and valor_i=='1'):
+                            no_sensor = item[5]
+                            movimiento_tv_st[item[5]] = 1.0
+                            if(movimiento_tv_st['2'] > movimiento_tv_st['1']):
+                                ocupacion['tv'] = 1
+                            if(movimiento_tv_st['1'] > movimiento_tv_st['2']):
+                                ocupacion['tv'] = 0
+                            #if(movimiento_tv_st['2']==1.0 and movimiento_tv_st['1']>0.99):
+                            #    ocupacion['tv'] = ocupacion['tv'] + 1
+                            #if(movimiento_tv_st['1']==1.0 and movimiento_tv_st['2']>0.99):
+                            #    ocupacion['tv'] = ocupacion['tv'] - 1
+                        #print ocupacion
+                        #print movimiento_tv_st
                     if(sensor_i== 'lev_snd'):  ## por el momento, el sonido está en el vector movimiento.
                         #print 'sonido_env: '+valor_i
                         if(lugar_i=='cuarto'):
-                            if(float(valor_i) > 10):
+                            if(float(valor_i) > 15):
                                 movimiento[lugar_i] = True
                         if(lugar_i=='vestidor'):
                             try:
@@ -433,7 +455,8 @@ def monitorCasa():
         #print delta
         for key in lugares:
             movimiento_st[key] = max(float(movimiento[key]),movimiento_st[key]*math.exp(-0.01*delta))  
-
+        for key in movimiento_tv_st:
+            movimiento_tv_st[key] = movimiento_tv_st[key]*math.exp(-0.01*delta)
 
         if(time.time() - dweepy_time > 10):
             dweepy_time = time.time()
