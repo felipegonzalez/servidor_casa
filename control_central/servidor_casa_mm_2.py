@@ -739,14 +739,14 @@ def monitorCasa():
                     if(globales['activo'] and (not dormir[key])):       
                         if(time.time() - tiempo_encendido[key] > 10):
                             #print "Encender luces"
-
-                            tiempo_encendido[key] = time.time()
-                            estado_luces[key] = True
                             if(key=='cocina'):
                                 print("Encender cocina, movimiento.")
                                 xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
                             else:
+
                                 encenderGrupo(luces[key])
+                            tiempo_encendido[key] = time.time()
+                            estado_luces[key] = True
                                 
                             
 
@@ -845,7 +845,7 @@ def monitorCasa():
             try:
                 print "Continuar sonos"
                 estado_sonos['alertDuration'] = 10000000
-                continuar_sonos(estado_sonos)
+                #continuar_sonos(estado_sonos)
 
             except:
                 'Error continuar sonos ****'
@@ -935,9 +935,12 @@ def encenderGrupo(grupo):
    for luz in grupo:
         try:
             inicial = time.time()
-            r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.5)
+            state_hue = requests.get(ip_hue+'lights/'+str(luz), timeout=0.2)
+            if(not json.loads(state_hue.content)['state']['on']):
+                r = requests.put(ip_hue + 'lights/'+str(luz)+'/state', data=payon, timeout=0.5)
+                logging.info('Luces :'+'encender '+str(luz)+'|'+str(final-inicio))
             final = time.time()
-            logging.info('Luces :'+'encender '+str(luz)+'|'+str(final-inicio))
+            
         except:
             print "Luces no disponibles para encender" + str(grupo)
 
