@@ -13,6 +13,13 @@
            e.preventDefault();
          });
          
+         $("#alarmas-reset").click(function(e) {
+           $.post("/alarmas_reset", {}).done(function(string) {
+               $("#respuesta input").val(string);
+            });
+           e.preventDefault();
+         });
+
          $("#autoaire").click(function(e) {
            $.post("/auto_ac", {}).done(function(string) {
                $("#respuesta input").val(string);

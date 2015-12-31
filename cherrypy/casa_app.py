@@ -41,6 +41,15 @@ class control(object):
             commandx = "INSERT INTO pendientes VALUES('aire_acondicionado','0')"
             cur.execute(commandx)
         return 'Enviado comando AC'
+    @cherrypy.expose
+    def alarmas_reset(self):
+        con = lite.connect('/Volumes/mmshared/bdatos/comandos.db')
+        with con:
+            cur = con.cursor()
+            commandx = "INSERT INTO pendientes VALUES('alarmas_reset','0')"
+            cur.execute(commandx)
+        return 'Reestableciendo alarmas'
+
 
     @cherrypy.expose
     def garage(self):

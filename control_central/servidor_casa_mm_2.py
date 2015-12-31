@@ -84,11 +84,11 @@ lugares_xbees = {}
 xbee_pin ={'puerta':{'dio-1':'pir', 'dio-2':'puerta', 'adc-3':'photo','dio-4':'cerrar','dio-0':'abrir'},
         'escalera':{'dio-4':'pir'},'bano_cuarto':{'dio-1':'pir'},'bano_escalera':{'dio-1':'pir'}}
 
-ip_hue ="http://192.168.100.2/api/newdeveloper/"
+ip_hue ="http://192.168.100.29/api/newdeveloper/"
 payoff = json.dumps({"on":False})
 payon = json.dumps({"on":True, "bri":255})
 
-ip_sonos = "192.168.100.7" ## ip de bocina play 1 (puede cambiar) TODO
+#ip_sonos = "192.168.100.7" ## ip de bocina play 1 (puede cambiar) TODO
 PATH ='/Volumes/mmshared/sonidos'
 path_s ='//homeserver/mmshared/sonidos/'
 ALERT = 'alert4.mp3' 
@@ -97,7 +97,16 @@ LANGUAGE = 'es' # speech language
 
 
 #sonos = SoCo(ip_sonos)
-sonos = soco.discover().pop()
+sonos_lista = soco.discover()
+
+while(len(sonos_lista) > 0):
+    zona = sonos_lista.pop()
+    if(zona.player_name=='Estudio'):
+        sonos = zona
+        print "Sonos estudio encontrado"
+        break
+
+
 #ip_felipe = '192.168.100.6'
 #ip_tere = '192.168.100.7'
 
@@ -147,7 +156,7 @@ puertas = {'puerta':1, 'estudiof':1,'estudiot':1}
 globales = {'activo':True, 'alarma':False, 'alarma_enviada':False, 'alarma_trip':False,
     'ac_encendido':False, 'auto_ac':True, 'felipe':False, 'tere':False, 
     'alarma_gas':False, 'alarma_gas_enviada':False,'chapa':False,'actividad_entrada':False,
-    'auto_luces':True, 'mA':0.0}
+    'auto_luces':True, 'mA':0.0, 'regadora':False}
 
 #xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8M',command='D4',parameter='\x05')
 
@@ -167,6 +176,7 @@ def monitorCasa():
     print("Iniciando....")
     logging.info('Starting')
     print("conectando pushbullet")
+
     po_client = Client(pb_key, api_token = pb_api_key)
     previo_no_tv='0'
 
@@ -186,7 +196,7 @@ def monitorCasa():
     chapa_por_cerrar = False
 
     print("Probando sonos...")
-    tocar('iniciar.mp3')
+    estado_sonos = tocar('iniciar.mp3')
 
     print("Apagando luces...")
     for key in luces:
@@ -267,10 +277,12 @@ def monitorCasa():
                 if(globales['activo'] and estado_luces[key] and globales['auto_luces']):
                     if(key=='cocina'):
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
+                        #estado_luces[key] = False
+                        print("Apagar cocina.")
                     else:
                         if(ocupacion[key]==0):
                             apagarGrupo(luces[key])
-                            estado_luces[key] = False
+                    estado_luces[key] = False
                     
 
 
@@ -384,12 +396,12 @@ def monitorCasa():
                         if(tstamp-tiempo_sonos > 15):
                             tiempo_sonos=time.time()
                             if(not  globales['alarma']):
-                                tocar("doorbell.mp3")
+                                estado_sonos = tocar("doorbell.mp3")
                             else:
                                 tiempo_sonos=time.time() + 50
                                 globales['alarma_trip'] = True
                                 sonos.volume = 100
-                                tocar("bs_alarm.mp3") ## tocar cuando hay alarma
+                                estado_sonos = tocar("bs_alarm.mp3") ## tocar cuando hay alarma
                                 sonos.volume = 40
                     if(sensor_i=='puerta' and valor_i=='1'):
                         if(puertas[lugar_i]==0 and lugar=='puerta'):
@@ -420,7 +432,7 @@ def monitorCasa():
                     if(sensor_i =='gaslpg'):
                         gas[lugar_i] = valor_i
                         try:
-                            if(float(valor_i) > 500):
+                            if(float(valor_i) > 600):
                                 globales['alarma_gas'] = True
                                 lugar_gas = lugar_i
                                 lectura = valor_i
@@ -543,7 +555,7 @@ def monitorCasa():
                 texto_voz('Alarma de gas en ' + lugar_gas)
                 #time.sleep(8)
                 #decir('Alarma de gas en ' + lugar_gas)
-                sonos.volume = 40
+                #sonos.volume = 40
             except:
                 print "Error decir alarma de gas"
 
@@ -566,6 +578,7 @@ def monitorCasa():
         if(chapa_por_cerrar and time.time()-tiempo_cerrar_chapa > 60*3):
             chapa(True, xbee=xbee)
             chapa_por_cerrar = False
+            globales['chapa'] = True
       
            
         # procesar comandos pendientes
@@ -607,7 +620,7 @@ def monitorCasa():
                             globales['alarma'] = True
                             globales['alarma_enviada'] = False
                             globales['alarma_trip'] = False
-                            tocar("alarma_activada.mp3")
+                            estado_sonos = tocar("alarma_activada.mp3")
                             chapa(True, xbee = xbee)
                             for key in luces:
                                 apagarGrupo(luces[key])
@@ -616,7 +629,7 @@ def monitorCasa():
                             actualizar_global('activo', 0.0, con2)
                         if(comando[1]=='0'):
                             globales['alarma'] = False
-                            tocar("alarma_desactivada.mp3")
+                            estado_sonos = tocar("alarma_desactivada.mp3")
                             chapa(False, xbee=xbee)
                             globales['alarma_trip']= False
                             globales['alarma_enviada'] = False
@@ -696,6 +709,9 @@ def monitorCasa():
                         #globales['activo'] = not globales['activo']
                         globales['auto_ac'] = not globales['auto_ac']
                         actualizar_global('auto_ac', int(globales['auto_ac']), con2)
+                    if(comando[0]=='alarmas_reset'):
+                        globales['alarma_enviada'] = False
+                        globales['alarma_gas_enviada'] = False
 
                         
                         #try:
@@ -727,6 +743,7 @@ def monitorCasa():
                             tiempo_encendido[key] = time.time()
                             estado_luces[key] = True
                             if(key=='cocina'):
+                                print("Encender cocina, movimiento.")
                                 xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x05')
                             else:
                                 encenderGrupo(luces[key])
@@ -734,6 +751,16 @@ def monitorCasa():
                             
 
         ## actividades programadas
+        if((not globales['regadora']) and dt.hour==21 and dt.minute < 2):
+            globales['regadora']=True
+            xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x05')
+            actualizar_global('regadora', int(globales['regadora']), con2)
+        if(globales['regadora'] and dt.hour==1):
+            globales['regadora']=False
+            xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x04')
+            globales['regadora'] = False
+            actualizar_global('regadora', int(globales['regadora']), con2)
+
         if(dormir['cuarto'] and dt.hour==8):
             print 'Despertador'
             sonos.stop()
@@ -812,6 +839,16 @@ def monitorCasa():
             print "Globales ", globales
             print " "
             print " "
+        #print estado_sonos
+        #print time.time() - estado_sonos['tiempo_inicio'], estado_sonos['alertDuration']
+        if((time.time() - estado_sonos['tiempo_inicio']) > estado_sonos['alertDuration']):
+            try:
+                print "Continuar sonos"
+                estado_sonos['alertDuration'] = 10000000
+                continuar_sonos(estado_sonos)
+
+            except:
+                'Error continuar sonos ****'
 
 
 
@@ -964,20 +1001,38 @@ def update_ultimas(item, con2, ts):
 def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)         
-        
+
+def continuar_sonos(estado_sonos):
+    track = estado_sonos['track']
+    mediaInfo = estado_sonos['mediaInfo']
+    playlistPos = int(track['playlist_position'])-1
+    trackPos = track['position']
+    trackURI = track['uri']
+    mediaURI = mediaInfo['CurrentURI']
+    mediaMeta = mediaInfo['CurrentURIMetaData']
+    if len(sonos.get_queue()) > 0 and playlistPos > 0:
+        print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
+        sonos.play_from_queue(playlistPos)
+        sonos.seek(trackPos)
+    else:
+        print 'Resuming %s' % mediaURI
+        sonos.play_uri(mediaURI, mediaMeta)
+
 def tocar(archivo):
     try:
-        #track = sonos.get_current_track_info()
+        track = sonos.get_current_track_info()
         #playlistPos = int(track['playlist_position'])-1
         #trackPos = track['position']
         #trackURI = track['uri']
 
     # This information allows us to resume services like Pandora
-        #mediaInfo = sonos.avTransport.GetMediaInfo([('InstanceID', 0)])
+        mediaInfo = sonos.avTransport.GetMediaInfo([('InstanceID', 0)])
         #mediaURI = mediaInfo['CurrentURI']
         #mediaMeta = mediaInfo['CurrentURIMetaData']
 
         sonos.play_uri('x-file-cifs://homeserver/sonidos/'+archivo)
+        duration_txt = sonos.get_current_track_info()['duration']
+        alertDuration = int(duration_txt.split(':')[2])
         #sleepTime=2
         #time.sleep(sleepTime)
         #if len(zp.get_queue()) > 0 and playlistPos > 0:
@@ -987,9 +1042,12 @@ def tocar(archivo):
         #else:
         #    print 'Resuming %s' % mediaURI
         #    sonos.play_uri(mediaURI, mediaMeta)
+        tiempo = time.time()
+        estado_salida = {'track':track, 'mediaInfo':mediaInfo, 'alertDuration':alertDuration, 'tiempo_inicio':tiempo}
+        #print estado_salida
+        return estado_salida
 
-
-    except:
+    except ValueError:
         print "Error sonos"
 
 def texto_voz(texto):
