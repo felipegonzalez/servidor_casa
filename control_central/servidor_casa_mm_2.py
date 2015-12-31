@@ -712,6 +712,8 @@ def monitorCasa():
                     if(comando[0]=='alarmas_reset'):
                         globales['alarma_enviada'] = False
                         globales['alarma_gas_enviada'] = False
+                        globales['alarma_gas'] = False
+                        globales['alarma_trip'] = False
 
                         
                         #try:
@@ -756,7 +758,6 @@ def monitorCasa():
             xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x05')
             actualizar_global('regadora', int(globales['regadora']), con2)
         if(globales['regadora'] and dt.hour==1):
-            globales['regadora']=False
             xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xca\xad\xda',command='D2',parameter='\x04')
             globales['regadora'] = False
             actualizar_global('regadora', int(globales['regadora']), con2)
@@ -839,6 +840,9 @@ def monitorCasa():
             print "Globales ", globales
             print " "
             print " "
+            if(int(globales['mA']) > 20000):
+                texto_voz('Están usando más de '+ str(math.floor(float(globales['mA'])/1000)) + ' amperios.')
+            #texto_voz('Creando log, latencia de '+str(round(sum(tiempos)/len(tiempos),2)) )
         #print estado_sonos
         #print time.time() - estado_sonos['tiempo_inicio'], estado_sonos['alertDuration']
         if((time.time() - estado_sonos['tiempo_inicio']) > estado_sonos['alertDuration']):
@@ -849,6 +853,7 @@ def monitorCasa():
 
             except:
                 'Error continuar sonos ****'
+
 
 
 
@@ -1013,13 +1018,14 @@ def continuar_sonos(estado_sonos):
     trackURI = track['uri']
     mediaURI = mediaInfo['CurrentURI']
     mediaMeta = mediaInfo['CurrentURIMetaData']
-    if len(sonos.get_queue()) > 0 and playlistPos > 0:
-        print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
-        sonos.play_from_queue(playlistPos)
-        sonos.seek(trackPos)
-    else:
-        print 'Resuming %s' % mediaURI
-        sonos.play_uri(mediaURI, mediaMeta)
+    if(estado_sonos['state']=='PLAYING'):
+        if(len(sonos.get_queue()) > 0 and playlistPos > 0):
+            print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
+            sonos.play_from_queue(playlistPos)
+            sonos.seek(trackPos)
+        else:
+            print 'Resuming %s' % mediaURI
+            sonos.play_uri(mediaURI, mediaMeta)
 
 def tocar(archivo):
     try:
@@ -1032,7 +1038,7 @@ def tocar(archivo):
         mediaInfo = sonos.avTransport.GetMediaInfo([('InstanceID', 0)])
         #mediaURI = mediaInfo['CurrentURI']
         #mediaMeta = mediaInfo['CurrentURIMetaData']
-
+        transport_state = sonos.get_current_transport_info()['current_transport_state']
         sonos.play_uri('x-file-cifs://homeserver/sonidos/'+archivo)
         duration_txt = sonos.get_current_track_info()['duration']
         alertDuration = int(duration_txt.split(':')[2])
@@ -1046,7 +1052,9 @@ def tocar(archivo):
         #    print 'Resuming %s' % mediaURI
         #    sonos.play_uri(mediaURI, mediaMeta)
         tiempo = time.time()
-        estado_salida = {'track':track, 'mediaInfo':mediaInfo, 'alertDuration':alertDuration, 'tiempo_inicio':tiempo}
+        estado_salida = {'track':track, 'mediaInfo':mediaInfo, 
+                        'alertDuration':alertDuration, 'tiempo_inicio':tiempo,
+                        'state':transport_state}
         #print estado_salida
         return estado_salida
 
@@ -1054,11 +1062,14 @@ def tocar(archivo):
         print "Error sonos"
 
 def texto_voz(texto):
+    estado_s = {}
     try:
         os.system("say -v Paulina '"+texto+"' -o "+"/Volumes/mmshared/sonidos/voz.mp4")
-        sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/voz.mp4')
+        estado_s = tocar("voz.mp4")
+        #sonos.play_uri('x-file-cifs:%s' % '//homeserver/sonidos/voz.mp4')
     except:
         print "Error say!"
+    return estado_s
 
 
 def decir(texto):
