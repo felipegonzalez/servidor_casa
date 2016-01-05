@@ -402,7 +402,7 @@ def monitorCasa():
                                 globales['alarma_trip'] = True
                                 sonos.volume = 100
                                 estado_sonos = tocar("bs_alarm.mp3") ## tocar cuando hay alarma
-                                sonos.volume = 40
+                                #sonos.volume = 40
                     if(sensor_i=='puerta' and valor_i=='1'):
                         if(puertas[lugar_i]==0 and lugar=='puerta'):
                             tiempo_cerrar_chapa = time.time()
@@ -609,6 +609,7 @@ def monitorCasa():
                         #print "Apagando luces"
                     if(comando[0]=='abrir_garage'):
                         print "Abriendo garage"
+                        texto_voz('Alguien abrió la puerta del garash')
                         try:
                             #r = requests.post('http://192.168.100.19:8090/garage')
                             r = requests.post('http://beaglebone.local:8090/garage')
@@ -643,12 +644,12 @@ def monitorCasa():
                         print "^^^^^^^^ decir"+comando[1]
                         texto = comando[1]
                         try:
-                            decir2(texto)
+                            texto_voz(texto)
                         except:
                             print "Error sonos ---------------------------"
                     if(comando[0]=='get_temperature'):
                         temps = temperaturas['sala']
-                        decir2('La temperatura en la sala es de '+str(round(temps))+' grados')
+                        texto_voz('La temperatura en la sala es de '+str(round(temps))+' grados')
                     #####
                     if(comando[0]=='dormir'):
                         dormir['cuarto'] = not dormir['cuarto']
@@ -674,6 +675,7 @@ def monitorCasa():
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D2',parameter='\x04')
                     if(comando[0]=='puerta_zumbador'):
                         print "Zumbando"
+                        texto_voz('Alguien está llegando.')
                         xbee.remote_at(dest_addr_long= '\x00\x13\xa2\x00@\xbe\xf8\x62',command='D1',parameter='\x05')
                         tiempo_zumbador = time.time()
                         time.sleep(3)
@@ -773,15 +775,19 @@ def monitorCasa():
                 parte_dia = 'tarde'
                 if(dt.hour>=20):
                     parte_dia = 'noche'
-            texto_voz('Hora de despertar! Son las '+str(dt.hour)+' con '+str(dt.minute))
+            sonos.volume = 60
+            if(dt.minute>0):
+                texto_voz('Hora de despertar! Son las '+str(dt.hour)+' con '+str(dt.minute))
+            else:
+                texto_voz('Hora de despertar! Son las '+str(dt.hour)+' en punto')
 
             #decir('')
             dormir['cuarto'] = False
 
 
         ## pings
-        if(time.time() - felipe_phone_time > 10):
-            pass
+        #if(time.time() - felipe_phone_time > 10):
+        #   pass
             #felipe_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.6' + ' > /dev/null', shell=True)
             #tere_iphone = subprocess.call('ping -q -c1 -W 1 '+ '192.168.100.7' + ' > /dev/null', shell=True)
             #felipe_phone_time = time.time()
@@ -842,7 +848,9 @@ def monitorCasa():
             print " "
             if(int(globales['mA']) > 20000):
                 texto_voz('Están usando más de '+ str(math.floor(float(globales['mA'])/1000)) + ' amperios.')
-            #texto_voz('Creando log, latencia de '+str(round(sum(tiempos)/len(tiempos),2)) )
+            latencia = round(sum(tiempos)/len(tiempos),2)
+            if(latencia > 2):
+                texto_voz('Latencia de '+str(round(sum(tiempos)/len(tiempos),2))+' segundos' )
         #print estado_sonos
         #print time.time() - estado_sonos['tiempo_inicio'], estado_sonos['alertDuration']
         if((time.time() - estado_sonos['tiempo_inicio']) > estado_sonos['alertDuration']):
@@ -1018,6 +1026,7 @@ def continuar_sonos(estado_sonos):
     trackURI = track['uri']
     mediaURI = mediaInfo['CurrentURI']
     mediaMeta = mediaInfo['CurrentURIMetaData']
+    sonos.volume = estado_sonos['volumen']
     if(estado_sonos['state']=='PLAYING'):
         if(len(sonos.get_queue()) > 0 and playlistPos > 0):
             print 'Resume queue from %d: %s - %s' % (playlistPos, track['artist'], track['title'])
@@ -1039,6 +1048,7 @@ def tocar(archivo):
         #mediaURI = mediaInfo['CurrentURI']
         #mediaMeta = mediaInfo['CurrentURIMetaData']
         transport_state = sonos.get_current_transport_info()['current_transport_state']
+        volumen = sonos.volume
         sonos.play_uri('x-file-cifs://homeserver/sonidos/'+archivo)
         duration_txt = sonos.get_current_track_info()['duration']
         alertDuration = int(duration_txt.split(':')[2])
@@ -1054,7 +1064,7 @@ def tocar(archivo):
         tiempo = time.time()
         estado_salida = {'track':track, 'mediaInfo':mediaInfo, 
                         'alertDuration':alertDuration, 'tiempo_inicio':tiempo,
-                        'state':transport_state}
+                        'state':transport_state, 'volumen':volumen}
         #print estado_salida
         return estado_salida
 
